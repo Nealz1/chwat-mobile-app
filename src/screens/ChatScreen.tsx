@@ -136,7 +136,7 @@ export function ChatScreen({ route, navigation }: Props) {
         <View style={[
             styles.messageContainer,
             item.sender === 'user' ? styles.userMessage : styles.botMessage,
-            { backgroundColor: item.sender === 'user' ? colors.primary : colors.surface }
+            { backgroundColor: item.sender === 'user' ? colors.primary : colors.surfaceAlt }
         ]}>
             {item.isLoading ? (
                 <ActivityIndicator color={colors.text} size="small" />
