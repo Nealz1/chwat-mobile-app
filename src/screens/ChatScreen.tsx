@@ -176,14 +176,6 @@ export function ChatScreen({ route, navigation }: Props) {
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 keyboardVerticalOffset={90}
             >
-                {/* New Chat Button */}
-                <TouchableOpacity
-                    style={[styles.newChatButton, { backgroundColor: colors.primary }]}
-                    onPress={handleNewChat}
-                >
-                    <Text style={styles.newChatText}>+ {t.chat.newChat}</Text>
-                </TouchableOpacity>
-
                 {/* Messages List */}
                 <FlatList
                     data={messages}
