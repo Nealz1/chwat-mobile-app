@@ -26,37 +26,28 @@ export function LoginScreen({ navigation }: Props) {
     const t = {
         title: language === 'pl' ? 'Logowanie' : 'Login',
         subtitle: language === 'pl'
-            ? 'Zaloguj się przez USOS lub wprowadź token z aplikacji webowej.'
-            : 'Log in via USOS or enter a token from the web app.',
-        usosButton: language === 'pl' ? '🎓 Zaloguj przez USOS' : '🎓 Login via USOS',
-        tokenPlaceholder: language === 'pl' ? 'Lub wklej token tutaj...' : 'Or paste token here...',
+            ? 'Zaloguj się przez USOS, a następnie skopiuj token z ustawień konta.'
+            : 'Log in via USOS, then copy the token from account settings.',
+        usosButton: language === 'pl' ? '🎓 Otwórz stronę logowania USOS' : '🎓 Open USOS login page',
+        tokenPlaceholder: language === 'pl' ? 'Wklej token tutaj...' : 'Paste token here...',
         tokenButton: language === 'pl' ? 'Zaloguj z tokenem' : 'Login with token',
         skipLogin: language === 'pl' ? 'Kontynuuj bez logowania' : 'Continue without login',
-        tokenHint: language === 'pl'
-            ? '💡 Token znajdziesz w ustawieniach konta na stronie webowej.'
-            : "💡 You can find the token in account settings on the web app.",
+        step1: language === 'pl' ? '1️⃣ Kliknij przycisk poniżej, aby otworzyć USOS' : '1️⃣ Click button below to open USOS',
+        step2: language === 'pl' ? '2️⃣ Zaloguj się na stronie' : '2️⃣ Log in on the website',
+        step3: language === 'pl' ? '3️⃣ Skopiuj token z ustawień konta' : '3️⃣ Copy token from account settings',
+        step4: language === 'pl' ? '4️⃣ Wklej token powyżej' : '4️⃣ Paste token above',
         success: language === 'pl' ? 'Zalogowano jako' : 'Logged in as',
         error: language === 'pl' ? 'Nieprawidłowy token' : 'Invalid token',
-        usosError: language === 'pl' ? 'Logowanie przez USOS nie powiodło się' : 'USOS login failed',
+        browserOpened: language === 'pl' ? 'Przeglądarka została otwarta' : 'Browser opened',
     };
 
-    const handleUsosLogin = async () => {
+    const handleOpenUsos = async () => {
         setIsLoading(true);
         try {
-            const success = await authService.login();
-            if (success) {
-                const user = await authService.getCurrentUser();
-                if (user) {
-                    Alert.alert('✅', `${t.success} ${user.first_name} ${user.last_name}`, [
-                        { text: 'OK', onPress: () => navigation.goBack() }
-                    ]);
-                }
-            } else {
-                Alert.alert('Error', t.usosError);
-            }
+            await authService.login();
+            Alert.alert('✅', t.browserOpened);
         } catch (error) {
-            console.error('USOS login error:', error);
-            Alert.alert('Error', t.usosError);
+            console.error('Error opening USOS:', error);
         } finally {
             setIsLoading(false);
         }
@@ -99,10 +90,18 @@ export function LoginScreen({ navigation }: Props) {
                     {t.subtitle}
                 </Text>
 
-                {/* USOS Login Button */}
+                {/* Steps */}
+                <View style={[styles.stepsBox, { backgroundColor: colors.surface }]}>
+                    <Text style={[styles.stepText, { color: colors.text }]}>{t.step1}</Text>
+                    <Text style={[styles.stepText, { color: colors.text }]}>{t.step2}</Text>
+                    <Text style={[styles.stepText, { color: colors.text }]}>{t.step3}</Text>
+                    <Text style={[styles.stepText, { color: colors.text }]}>{t.step4}</Text>
+                </View>
+
+                {/* USOS Button */}
                 <TouchableOpacity
                     style={[styles.usosButton, { backgroundColor: '#1a4d8f' }]}
-                    onPress={handleUsosLogin}
+                    onPress={handleOpenUsos}
                     disabled={isLoading}
                 >
                     {isLoading ? (
@@ -111,15 +110,6 @@ export function LoginScreen({ navigation }: Props) {
                         <Text style={styles.usosButtonText}>{t.usosButton}</Text>
                     )}
                 </TouchableOpacity>
-
-                {/* Divider */}
-                <View style={styles.divider}>
-                    <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-                    <Text style={[styles.dividerText, { color: colors.textSecondary }]}>
-                        {language === 'pl' ? 'lub' : 'or'}
-                    </Text>
-                    <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-                </View>
 
                 {/* Token Input */}
                 <View style={[styles.inputContainer, { backgroundColor: colors.surface }]}>
@@ -136,7 +126,10 @@ export function LoginScreen({ navigation }: Props) {
                 </View>
 
                 <TouchableOpacity
-                    style={[styles.tokenButton, { backgroundColor: colors.primary }]}
+                    style={[
+                        styles.tokenButton,
+                        { backgroundColor: token.trim() ? colors.primary : colors.border }
+                    ]}
                     onPress={handleTokenLogin}
                     disabled={isLoading || !token.trim()}
                 >
@@ -151,12 +144,6 @@ export function LoginScreen({ navigation }: Props) {
                         {t.skipLogin}
                     </Text>
                 </TouchableOpacity>
-
-                <View style={[styles.infoBox, { backgroundColor: colors.surface }]}>
-                    <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-                        {t.tokenHint}
-                    </Text>
-                </View>
             </View>
         </SafeAreaView>
     );
@@ -180,32 +167,29 @@ const styles = StyleSheet.create({
     subtitle: {
         fontSize: 15,
         textAlign: 'center',
-        marginBottom: 32,
+        marginBottom: 24,
         lineHeight: 22,
+    },
+    stepsBox: {
+        padding: 16,
+        borderRadius: 12,
+        marginBottom: 20,
+    },
+    stepText: {
+        fontSize: 14,
+        marginBottom: 8,
+        lineHeight: 20,
     },
     usosButton: {
         padding: 16,
         borderRadius: 12,
         alignItems: 'center',
-        marginBottom: 12,
+        marginBottom: 20,
     },
     usosButtonText: {
         color: '#FFFFFF',
         fontSize: 17,
         fontWeight: '600',
-    },
-    divider: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginVertical: 20,
-    },
-    dividerLine: {
-        flex: 1,
-        height: 1,
-    },
-    dividerText: {
-        marginHorizontal: 12,
-        fontSize: 14,
     },
     inputContainer: {
         borderRadius: 12,
@@ -232,14 +216,5 @@ const styles = StyleSheet.create({
     },
     cancelText: {
         fontSize: 15,
-    },
-    infoBox: {
-        marginTop: 24,
-        padding: 16,
-        borderRadius: 12,
-    },
-    infoText: {
-        fontSize: 14,
-        lineHeight: 20,
     },
 });
