@@ -1,25 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     View,
     Text,
+    FlatList,
     TouchableOpacity,
     StyleSheet,
-    ScrollView,
+    Image,
+    TextInput,
+    RefreshControl,
 } from 'react-native';
-import {
-    DrawerContentScrollView,
-    DrawerContentComponentProps,
-} from '@react-navigation/drawer';
-import { authService } from '../services/authService';
+import { DrawerContentComponentProps } from '@react-navigation/drawer';
 import { chatService } from '../services/chatService';
-import type { User, ChatSession } from '../types';
+import { authService } from '../services/authService';
+import type { ChatSession, User } from '../types';
 import { useTheme } from '../hooks/useTheme';
+import { useLanguage } from '../contexts/LanguageContext';
 
-export function CustomDrawer(props: DrawerContentComponentProps) {
+const watLogo = require('../../assets/wat_logo_light.png');
+
+export function CustomDrawer({ navigation }: DrawerContentComponentProps) {
     const { colors } = useTheme();
-    const { navigation } = props;
+    const { language, t } = useLanguage();
     const [user, setUser] = useState<User | null>(null);
-    const [recentSessions, setRecentSessions] = useState<ChatSession[]>([]);
+    const [sessions, setSessions] = useState<ChatSession[]>([]);
+    const [refreshing, setRefreshing] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
         loadData();
@@ -28,109 +33,62 @@ export function CustomDrawer(props: DrawerContentComponentProps) {
     const loadData = async () => {
         const currentUser = await authService.getCurrentUser();
         setUser(currentUser);
-
         if (currentUser) {
-            const sessions = await chatService.getSessions();
-            setRecentSessions(sessions.slice(0, 5));
+            await loadSessions();
         }
     };
 
+    const loadSessions = async () => {
+        try {
+            const data = await chatService.getSessions(false);
+            setSessions(data.filter(s => !s.is_archived));
+        } catch (error) {
+            console.error('Error loading sessions:', error);
+        }
+    };
+
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        await loadSessions();
+        setRefreshing(false);
+    }, []);
+
     const handleNewChat = () => {
-        navigation.navigate('Chat', { sessionId: undefined });
+        navigation.navigate('Chat', {});
         navigation.closeDrawer();
     };
 
-    const handleSelectSession = (sessionId: number) => {
-        navigation.navigate('Chat', { sessionId });
+    const handleOpenChat = (session: ChatSession) => {
+        navigation.navigate('Chat', { sessionId: session.id });
         navigation.closeDrawer();
     };
+
+    const filteredSessions = sessions.filter(s =>
+        s.title.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    const pinnedSessions = filteredSessions.filter(s => s.is_pinned);
+    const regularSessions = filteredSessions.filter(s => !s.is_pinned);
 
     return (
-        <DrawerContentScrollView
-            {...props}
-            style={{ backgroundColor: colors.background }}
-            contentContainerStyle={styles.container}
-        >
-            {/* Header */}
-            <View style={[styles.header, { backgroundColor: colors.primary }]}>
-                <Text style={styles.headerTitle}>🎓 WAT Helpdesk</Text>
-                <Text style={styles.headerSubtitle}>Asystent AI</Text>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
+            {/* Header with Logo */}
+            <View style={[styles.header, { backgroundColor: '#a51d22' }]}>
+                <Image source={watLogo} style={styles.headerLogo} resizeMode="contain" />
+                <Text style={styles.headerTitle}>HELPDesk</Text>
             </View>
 
-            {/* New Chat Button */}
-            <TouchableOpacity
-                style={[styles.newChatButton, { backgroundColor: colors.surface }]}
-                onPress={handleNewChat}
-            >
-                <Text style={[styles.newChatText, { color: colors.primary }]}>+ Nowy czat</Text>
-            </TouchableOpacity>
-
-            {/* Recent Sessions */}
-            {user && recentSessions.length > 0 && (
-                <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-                        OSTATNIE ROZMOWY
-                    </Text>
-                    {recentSessions.map((session) => (
-                        <TouchableOpacity
-                            key={session.id}
-                            style={[styles.sessionItem, { backgroundColor: colors.surface }]}
-                            onPress={() => handleSelectSession(session.id)}
-                        >
-                            <Text
-                                style={[styles.sessionTitle, { color: colors.text }]}
-                                numberOfLines={1}
-                            >
-                                {session.title}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                    <TouchableOpacity
-                        style={styles.viewAllButton}
-                        onPress={() => {
-                            navigation.navigate('Sessions');
-                            navigation.closeDrawer();
-                        }}
-                    >
-                        <Text style={[styles.viewAllText, { color: colors.primary }]}>
-                            Zobacz wszystkie →
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-            )}
-
-            {/* Navigation Items */}
-            <View style={styles.section}>
+            {/* User Info */}
+            {user ? (
                 <TouchableOpacity
-                    style={[styles.navItem, { backgroundColor: colors.surface }]}
+                    style={[styles.userSection, { borderBottomColor: colors.border }]}
                     onPress={() => {
                         navigation.navigate('Settings');
                         navigation.closeDrawer();
                     }}
                 >
-                    <Text style={styles.navIcon}>⚙️</Text>
-                    <Text style={[styles.navText, { color: colors.text }]}>Ustawienia</Text>
-                </TouchableOpacity>
-
-                {!user && (
-                    <TouchableOpacity
-                        style={[styles.navItem, { backgroundColor: colors.surface }]}
-                        onPress={() => {
-                            navigation.navigate('Login' as any);
-                            navigation.closeDrawer();
-                        }}
-                    >
-                        <Text style={styles.navIcon}>🔐</Text>
-                        <Text style={[styles.navText, { color: colors.text }]}>Zaloguj się</Text>
-                    </TouchableOpacity>
-                )}
-            </View>
-
-            {/* User Info */}
-            {user && (
-                <View style={[styles.userSection, { backgroundColor: colors.surface }]}>
-                    <View style={[styles.userAvatar, { backgroundColor: colors.primary }]}>
-                        <Text style={styles.userAvatarText}>
+                    <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
+                        <Text style={styles.avatarText}>
                             {user.first_name[0]}{user.last_name[0]}
                         </Text>
                     </View>
@@ -139,12 +97,157 @@ export function CustomDrawer(props: DrawerContentComponentProps) {
                             {user.first_name} {user.last_name}
                         </Text>
                         <Text style={[styles.userStatus, { color: colors.textSecondary }]}>
-                            Zalogowano
+                            Student
                         </Text>
                     </View>
-                </View>
+                </TouchableOpacity>
+            ) : (
+                <TouchableOpacity
+                    style={[styles.loginSection, { borderBottomColor: colors.border }]}
+                    onPress={() => {
+                        navigation.navigate('Login');
+                        navigation.closeDrawer();
+                    }}
+                >
+                    <Text style={[styles.loginText, { color: colors.primary }]}>
+                        {t.settings.login}
+                    </Text>
+                </TouchableOpacity>
             )}
-        </DrawerContentScrollView>
+
+            {/* New Chat Button */}
+            <TouchableOpacity
+                style={[styles.newChatButton, { backgroundColor: colors.primary }]}
+                onPress={handleNewChat}
+            >
+                <Text style={styles.newChatIcon}>+</Text>
+                <Text style={styles.newChatText}>{t.chat?.newChat || 'Nowa rozmowa'}</Text>
+            </TouchableOpacity>
+
+            {/* Search */}
+            <View style={[styles.searchContainer, { backgroundColor: colors.surface }]}>
+                <Text style={styles.searchIcon}>🔍</Text>
+                <TextInput
+                    style={[styles.searchInput, { color: colors.text }]}
+                    placeholder={language === 'pl' ? 'Szukaj rozmów...' : 'Search chats...'}
+                    placeholderTextColor={colors.textSecondary}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                />
+            </View>
+
+            {/* Navigation Items */}
+            <View style={styles.navSection}>
+                <TouchableOpacity
+                    style={styles.navItem}
+                    onPress={() => {
+                        navigation.navigate('Groups');
+                        navigation.closeDrawer();
+                    }}
+                >
+                    <Text style={styles.navIcon}>📁</Text>
+                    <Text style={[styles.navLabel, { color: colors.text }]}>
+                        {language === 'pl' ? 'Grupy' : 'Groups'}
+                    </Text>
+                </TouchableOpacity>
+            </View>
+
+            {/* Sessions List */}
+            <View style={styles.sessionsSection}>
+                {pinnedSessions.length > 0 && (
+                    <>
+                        <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
+                            📌 {language === 'pl' ? 'Przypięte' : 'Pinned'}
+                        </Text>
+                        {pinnedSessions.map(session => (
+                            <TouchableOpacity
+                                key={session.id}
+                                style={styles.sessionItem}
+                                onPress={() => handleOpenChat(session)}
+                            >
+                                <Text style={styles.sessionIcon}>💬</Text>
+                                <Text
+                                    style={[styles.sessionTitle, { color: colors.text }]}
+                                    numberOfLines={1}
+                                >
+                                    {session.title}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </>
+                )}
+
+                <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
+                    {language === 'pl' ? 'Ostatnie' : 'Recent'}
+                </Text>
+                <FlatList
+                    data={regularSessions.slice(0, 10)}
+                    keyExtractor={(item) => item.id.toString()}
+                    renderItem={({ item }) => (
+                        <TouchableOpacity
+                            style={styles.sessionItem}
+                            onPress={() => handleOpenChat(item)}
+                        >
+                            <Text style={styles.sessionIcon}>💬</Text>
+                            <Text
+                                style={[styles.sessionTitle, { color: colors.text }]}
+                                numberOfLines={1}
+                            >
+                                {item.title}
+                            </Text>
+                        </TouchableOpacity>
+                    )}
+                    refreshControl={
+                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                    }
+                    ListEmptyComponent={
+                        <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+                            {language === 'pl' ? 'Brak rozmów' : 'No chats'}
+                        </Text>
+                    }
+                />
+            </View>
+
+            {/* Bottom Items */}
+            <View style={[styles.bottomSection, { borderTopColor: colors.border }]}>
+                <TouchableOpacity
+                    style={styles.navItem}
+                    onPress={() => {
+                        navigation.navigate('Sessions');
+                        navigation.closeDrawer();
+                    }}
+                >
+                    <Text style={styles.navIcon}>📋</Text>
+                    <Text style={[styles.navLabel, { color: colors.text }]}>
+                        {t.sessions?.title || 'Historia'}
+                    </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={styles.navItem}
+                    onPress={() => {
+                        navigation.navigate('Help');
+                        navigation.closeDrawer();
+                    }}
+                >
+                    <Text style={styles.navIcon}>❓</Text>
+                    <Text style={[styles.navLabel, { color: colors.text }]}>
+                        {language === 'pl' ? 'Pomoc' : 'Help'}
+                    </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={styles.navItem}
+                    onPress={() => {
+                        navigation.navigate('Settings');
+                        navigation.closeDrawer();
+                    }}
+                >
+                    <Text style={styles.navIcon}>⚙️</Text>
+                    <Text style={[styles.navLabel, { color: colors.text }]}>
+                        {t.settings?.title || 'Ustawienia'}
+                    </Text>
+                </TouchableOpacity>
+            </View>
+        </View>
     );
 }
 
@@ -153,102 +256,145 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     header: {
-        padding: 20,
-        paddingTop: 40,
-        marginBottom: 8,
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+        paddingTop: 48,
+    },
+    headerLogo: {
+        width: 32,
+        height: 32,
+        marginRight: 10,
     },
     headerTitle: {
         color: '#FFFFFF',
-        fontSize: 22,
+        fontSize: 20,
         fontWeight: '700',
-    },
-    headerSubtitle: {
-        color: 'rgba(255,255,255,0.8)',
-        fontSize: 14,
-        marginTop: 4,
-    },
-    newChatButton: {
-        margin: 12,
-        padding: 14,
-        borderRadius: 10,
-        alignItems: 'center',
-    },
-    newChatText: {
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    section: {
-        paddingHorizontal: 12,
-        marginBottom: 16,
-    },
-    sectionTitle: {
-        fontSize: 12,
-        fontWeight: '600',
-        marginBottom: 8,
-        marginLeft: 4,
-        letterSpacing: 0.5,
-    },
-    sessionItem: {
-        padding: 12,
-        borderRadius: 8,
-        marginBottom: 4,
-    },
-    sessionTitle: {
-        fontSize: 15,
-    },
-    viewAllButton: {
-        padding: 8,
-        alignItems: 'center',
-    },
-    viewAllText: {
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    navItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 14,
-        borderRadius: 10,
-        marginBottom: 4,
-    },
-    navIcon: {
-        fontSize: 18,
-        marginRight: 12,
-    },
-    navText: {
-        fontSize: 16,
     },
     userSection: {
         flexDirection: 'row',
         alignItems: 'center',
-        margin: 12,
-        padding: 12,
-        borderRadius: 10,
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
+        padding: 16,
+        borderBottomWidth: 1,
     },
-    userAvatar: {
+    avatar: {
         width: 40,
         height: 40,
         borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    userAvatarText: {
+    avatarText: {
         color: '#FFFFFF',
         fontSize: 14,
         fontWeight: '600',
     },
     userInfo: {
         marginLeft: 12,
+        flex: 1,
     },
     userName: {
         fontSize: 15,
         fontWeight: '600',
     },
     userStatus: {
+        fontSize: 13,
+    },
+    loginSection: {
+        padding: 16,
+        borderBottomWidth: 1,
+    },
+    loginText: {
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    newChatButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        margin: 12,
+        padding: 12,
+        borderRadius: 8,
+    },
+    newChatIcon: {
+        color: '#FFFFFF',
+        fontSize: 20,
+        marginRight: 8,
+        fontWeight: '600',
+    },
+    newChatText: {
+        color: '#FFFFFF',
+        fontSize: 15,
+        fontWeight: '600',
+    },
+    searchContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginHorizontal: 12,
+        marginBottom: 8,
+        borderRadius: 8,
+        paddingHorizontal: 10,
+    },
+    searchIcon: {
+        fontSize: 14,
+        marginRight: 8,
+    },
+    searchInput: {
+        flex: 1,
+        paddingVertical: 10,
+        fontSize: 14,
+    },
+    navSection: {
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+    },
+    navItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 12,
+        borderRadius: 8,
+    },
+    navIcon: {
+        fontSize: 16,
+        marginRight: 12,
+    },
+    navLabel: {
+        fontSize: 15,
+    },
+    sessionsSection: {
+        flex: 1,
+        paddingHorizontal: 8,
+    },
+    sectionLabel: {
         fontSize: 12,
+        fontWeight: '600',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    sessionItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 10,
+        borderRadius: 6,
+        marginVertical: 1,
+    },
+    sessionIcon: {
+        fontSize: 14,
+        marginRight: 10,
+    },
+    sessionTitle: {
+        fontSize: 14,
+        flex: 1,
+    },
+    emptyText: {
+        padding: 12,
+        fontSize: 14,
+        textAlign: 'center',
+    },
+    bottomSection: {
+        borderTopWidth: 1,
+        paddingHorizontal: 8,
+        paddingVertical: 8,
     },
 });

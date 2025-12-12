@@ -47,36 +47,16 @@ export function ChatScreen({ route, navigation }: Props) {
         }
     }, [route.params?.sessionId]);
 
-    // Set up header buttons
+    // Set up header with hamburger menu
     useEffect(() => {
         navigation.setOptions({
-            headerRight: () => (
-                <View style={styles.headerButtons}>
-                    <TouchableOpacity
-                        style={styles.headerButton}
-                        onPress={() => navigation.navigate('Help')}
-                    >
-                        <Text style={styles.headerButtonText}>❓</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.headerButton}
-                        onPress={() => navigation.navigate('Groups')}
-                    >
-                        <Text style={styles.headerButtonText}>📁</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.headerButton}
-                        onPress={() => navigation.navigate('Sessions')}
-                    >
-                        <Text style={styles.headerButtonText}>📋</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.headerButton}
-                        onPress={() => navigation.navigate('Settings')}
-                    >
-                        <Text style={styles.headerButtonText}>⚙️</Text>
-                    </TouchableOpacity>
-                </View>
+            headerLeft: () => (
+                <TouchableOpacity
+                    style={styles.menuButton}
+                    onPress={() => (navigation as any).getParent()?.openDrawer()}
+                >
+                    <Text style={styles.menuButtonText}>☰</Text>
+                </TouchableOpacity>
             ),
         });
     }, [navigation]);
@@ -240,14 +220,13 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    headerButtons: {
-        flexDirection: 'row',
+    menuButton: {
+        padding: 8,
+        marginLeft: 8,
     },
-    headerButton: {
-        marginLeft: 12,
-    },
-    headerButtonText: {
-        fontSize: 20,
+    menuButtonText: {
+        fontSize: 24,
+        color: '#FFFFFF',
     },
     messagesList: {
         padding: 16,
