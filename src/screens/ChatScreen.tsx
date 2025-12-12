@@ -246,6 +246,7 @@ const styles = StyleSheet.create({
     inputContainer: {
         flexDirection: 'row',
         padding: 12,
+        paddingBottom: 32,
         alignItems: 'flex-end',
         borderTopWidth: 1,
         borderTopColor: 'rgba(0,0,0,0.1)',
