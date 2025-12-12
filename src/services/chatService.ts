@@ -126,6 +126,63 @@ class ChatService {
             return false;
         }
     }
+
+    // Archive/Unarchive
+    async archiveSession(sessionId: number): Promise<boolean> {
+        try {
+            const headers = await authService.getAuthHeaders();
+            const response = await fetch(
+                `${API_BASE_URL}/chat/sessions/${sessionId}/archive`,
+                {
+                    method: 'POST',
+                    headers,
+                }
+            );
+            return response.ok;
+        } catch (error) {
+            console.error('Error archiving session:', error);
+            return false;
+        }
+    }
+
+    async unarchiveSession(sessionId: number): Promise<boolean> {
+        try {
+            const headers = await authService.getAuthHeaders();
+            const response = await fetch(
+                `${API_BASE_URL}/chat/sessions/${sessionId}/unarchive`,
+                {
+                    method: 'POST',
+                    headers,
+                }
+            );
+            return response.ok;
+        } catch (error) {
+            console.error('Error unarchiving session:', error);
+            return false;
+        }
+    }
+
+    // Pin/Unpin
+    async pinSession(sessionId: number, isPinned: boolean): Promise<boolean> {
+        try {
+            const headers = await authService.getAuthHeaders();
+            const response = await fetch(
+                `${API_BASE_URL}/chat/sessions/${sessionId}/pin`,
+                {
+                    method: 'PUT',
+                    headers: {
+                        ...headers,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ is_pinned: isPinned }),
+                }
+            );
+            return response.ok;
+        } catch (error) {
+            console.error('Error pinning session:', error);
+            return false;
+        }
+    }
 }
 
 export const chatService = new ChatService();

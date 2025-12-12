@@ -13,17 +13,19 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { authService } from '../services/authService';
 import { useTheme } from '../hooks/useTheme';
+import { useLanguage } from '../contexts/LanguageContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 export function LoginScreen({ navigation }: Props) {
     const { colors } = useTheme();
+    const { t } = useLanguage();
     const [token, setToken] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
     const handleTokenLogin = async () => {
         if (!token.trim()) {
-            Alert.alert('Błąd', 'Wprowadź token');
+            Alert.alert('Error', t.login.error);
             return;
         }
 
@@ -33,15 +35,15 @@ export function LoginScreen({ navigation }: Props) {
             const user = await authService.getCurrentUser();
 
             if (user) {
-                Alert.alert('Sukces', `Zalogowano jako ${user.first_name} ${user.last_name}`, [
+                Alert.alert('✅', `${t.login.success} ${user.first_name} ${user.last_name}`, [
                     { text: 'OK', onPress: () => navigation.goBack() }
                 ]);
             } else {
                 await authService.removeToken();
-                Alert.alert('Błąd', 'Nieprawidłowy token');
+                Alert.alert('Error', t.login.error);
             }
         } catch (error) {
-            Alert.alert('Błąd', 'Wystąpił błąd podczas logowania');
+            Alert.alert('Error', t.login.error);
         } finally {
             setIsLoading(false);
         }
@@ -51,11 +53,11 @@ export function LoginScreen({ navigation }: Props) {
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.content}>
                 <Text style={[styles.title, { color: colors.text }]}>
-                    Logowanie
+                    {t.login.title}
                 </Text>
 
                 <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-                    Wprowadź token autoryzacyjny z aplikacji webowej, aby zsynchronizować konto.
+                    {t.login.subtitle}
                 </Text>
 
                 <View style={[styles.inputContainer, { backgroundColor: colors.surface }]}>
@@ -63,7 +65,7 @@ export function LoginScreen({ navigation }: Props) {
                         style={[styles.input, { color: colors.text }]}
                         value={token}
                         onChangeText={setToken}
-                        placeholder="Wklej token tutaj..."
+                        placeholder={t.login.tokenPlaceholder}
                         placeholderTextColor={colors.textSecondary}
                         autoCapitalize="none"
                         autoCorrect={false}
@@ -79,7 +81,7 @@ export function LoginScreen({ navigation }: Props) {
                     {isLoading ? (
                         <ActivityIndicator color="#FFFFFF" />
                     ) : (
-                        <Text style={styles.buttonText}>Zaloguj</Text>
+                        <Text style={styles.buttonText}>{t.login.loginButton}</Text>
                     )}
                 </TouchableOpacity>
 
@@ -88,13 +90,13 @@ export function LoginScreen({ navigation }: Props) {
                     onPress={() => navigation.goBack()}
                 >
                     <Text style={[styles.cancelText, { color: colors.textSecondary }]}>
-                        Kontynuuj bez logowania
+                        {t.login.skipLogin}
                     </Text>
                 </TouchableOpacity>
 
                 <View style={[styles.infoBox, { backgroundColor: colors.surface }]}>
                     <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-                        💡 Aby uzyskać token, zaloguj się przez USOS na stronie webowej i skopiuj token z ustawień konta.
+                        {t.login.tokenHint}
                     </Text>
                 </View>
             </View>

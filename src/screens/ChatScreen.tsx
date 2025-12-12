@@ -18,13 +18,15 @@ import { chatService, SendMessageResponse } from '../services/chatService';
 import { authService } from '../services/authService';
 import type { Message, User } from '../types';
 import { useTheme } from '../hooks/useTheme';
+import { useLanguage } from '../contexts/LanguageContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
 
 export function ChatScreen({ route, navigation }: Props) {
     const { colors, isDark } = useTheme();
+    const { t } = useLanguage();
     const [messages, setMessages] = useState<Message[]>([
-        { sender: 'bot', text: 'Cześć! Jestem asystentem WAT. Jak mogę Ci pomóc?' }
+        { sender: 'bot', text: t.chat.welcomeMessage }
     ]);
     const [inputText, setInputText] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -80,7 +82,7 @@ export function ChatScreen({ route, navigation }: Props) {
                 nodeId: m.node_id,
             }));
             setMessages(converted.length > 0 ? converted : [
-                { sender: 'bot', text: 'Cześć! Jestem asystentem WAT. Jak mogę Ci pomóc?' }
+                { sender: 'bot', text: t.chat.welcomeMessage }
             ]);
         } catch (error) {
             console.error('Error loading session messages:', error);
@@ -123,19 +125,19 @@ export function ChatScreen({ route, navigation }: Props) {
             console.error('Error sending message:', error);
             setMessages(prev => [
                 ...prev.slice(0, -1),
-                { sender: 'bot', text: 'Przepraszam, wystąpił błąd. Spróbuj ponownie.' }
+                { sender: 'bot', text: t.chat.serverError }
             ]);
         } finally {
             setIsLoading(false);
         }
-    }, [inputText, isLoading, user, currentSessionId]);
+    }, [inputText, isLoading, user, currentSessionId, t]);
 
     const handleNewChat = useCallback(() => {
         setCurrentSessionId(undefined);
         setMessages([
-            { sender: 'bot', text: 'Cześć! Jestem asystentem WAT. Jak mogę Ci pomóc?' }
+            { sender: 'bot', text: t.chat.welcomeMessage }
         ]);
-    }, []);
+    }, [t]);
 
     const renderMessage = useCallback(({ item }: { item: Message }) => (
         <View style={[
@@ -180,7 +182,7 @@ export function ChatScreen({ route, navigation }: Props) {
                     style={[styles.newChatButton, { backgroundColor: colors.primary }]}
                     onPress={handleNewChat}
                 >
-                    <Text style={styles.newChatText}>+ Nowy czat</Text>
+                    <Text style={styles.newChatText}>+ {t.chat.newChat}</Text>
                 </TouchableOpacity>
 
                 {/* Messages List */}
@@ -198,7 +200,7 @@ export function ChatScreen({ route, navigation }: Props) {
                         style={[styles.input, { color: colors.text, backgroundColor: colors.background }]}
                         value={inputText}
                         onChangeText={setInputText}
-                        placeholder="Napisz wiadomość..."
+                        placeholder={t.chat.placeholder}
                         placeholderTextColor={colors.textSecondary}
                         multiline
                         maxLength={4000}

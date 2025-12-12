@@ -14,11 +14,13 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 import { authService } from '../services/authService';
 import type { User } from '../types';
 import { useTheme } from '../hooks/useTheme';
+import { useLanguage } from '../contexts/LanguageContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
 export function SettingsScreen({ navigation }: Props) {
     const { colors, isDark, toggleTheme } = useTheme();
+    const { language, setLanguage, t } = useLanguage();
     const [user, setUser] = useState<User | null>(null);
 
     useEffect(() => {
@@ -32,12 +34,12 @@ export function SettingsScreen({ navigation }: Props) {
 
     const handleLogout = async () => {
         Alert.alert(
-            'Wyloguj',
-            'Czy na pewno chcesz się wylogować?',
+            t.settings.logout,
+            language === 'pl' ? 'Czy na pewno chcesz się wylogować?' : 'Are you sure you want to log out?',
             [
-                { text: 'Anuluj', style: 'cancel' },
+                { text: t.common.cancel, style: 'cancel' },
                 {
-                    text: 'Wyloguj',
+                    text: t.settings.logout,
                     style: 'destructive',
                     onPress: async () => {
                         await authService.logout();
@@ -53,6 +55,10 @@ export function SettingsScreen({ navigation }: Props) {
         navigation.navigate('Login');
     };
 
+    const toggleLanguage = () => {
+        setLanguage(language === 'pl' ? 'en' : 'pl');
+    };
+
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <ScrollView contentContainerStyle={styles.content}>
@@ -60,7 +66,7 @@ export function SettingsScreen({ navigation }: Props) {
                 {user ? (
                     <View style={[styles.section, { backgroundColor: colors.surface }]}>
                         <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-                            KONTO
+                            {t.settings.account.toUpperCase()}
                         </Text>
                         <View style={styles.userInfo}>
                             <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
@@ -81,22 +87,22 @@ export function SettingsScreen({ navigation }: Props) {
                             style={[styles.logoutButton, { backgroundColor: colors.error }]}
                             onPress={handleLogout}
                         >
-                            <Text style={styles.logoutText}>Wyloguj się</Text>
+                            <Text style={styles.logoutText}>{t.settings.logout}</Text>
                         </TouchableOpacity>
                     </View>
                 ) : (
                     <View style={[styles.section, { backgroundColor: colors.surface }]}>
                         <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-                            KONTO
+                            {t.settings.account.toUpperCase()}
                         </Text>
                         <Text style={[styles.notLoggedIn, { color: colors.text }]}>
-                            Nie jesteś zalogowany
+                            {t.settings.notLoggedIn}
                         </Text>
                         <TouchableOpacity
                             style={[styles.loginButton, { backgroundColor: colors.primary }]}
                             onPress={handleLogin}
                         >
-                            <Text style={styles.loginText}>Zaloguj się</Text>
+                            <Text style={styles.loginText}>{t.settings.login}</Text>
                         </TouchableOpacity>
                     </View>
                 )}
@@ -104,11 +110,11 @@ export function SettingsScreen({ navigation }: Props) {
                 {/* Appearance Section */}
                 <View style={[styles.section, { backgroundColor: colors.surface }]}>
                     <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-                        WYGLĄD
+                        {t.settings.theme.toUpperCase()}
                     </Text>
                     <View style={styles.settingRow}>
                         <Text style={[styles.settingLabel, { color: colors.text }]}>
-                            Tryb ciemny
+                            {t.settings.darkMode}
                         </Text>
                         <Switch
                             value={isDark}
@@ -119,18 +125,35 @@ export function SettingsScreen({ navigation }: Props) {
                     </View>
                 </View>
 
+                {/* Language Section */}
+                <View style={[styles.section, { backgroundColor: colors.surface }]}>
+                    <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+                        {t.settings.language.toUpperCase()}
+                    </Text>
+                    <TouchableOpacity style={styles.settingRow} onPress={toggleLanguage}>
+                        <Text style={[styles.settingLabel, { color: colors.text }]}>
+                            {language === 'pl' ? '🇵🇱 Polski' : '🇬🇧 English'}
+                        </Text>
+                        <Text style={[styles.settingValue, { color: colors.primary }]}>
+                            {language === 'pl' ? 'Zmień na EN' : 'Switch to PL'}
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+
                 {/* About Section */}
                 <View style={[styles.section, { backgroundColor: colors.surface }]}>
                     <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-                        INFORMACJE
+                        {language === 'pl' ? 'INFORMACJE' : 'ABOUT'}
                     </Text>
                     <View style={styles.aboutRow}>
-                        <Text style={[styles.aboutLabel, { color: colors.text }]}>Wersja</Text>
+                        <Text style={[styles.aboutLabel, { color: colors.text }]}>{t.settings.version}</Text>
                         <Text style={[styles.aboutValue, { color: colors.textSecondary }]}>1.0.0</Text>
                     </View>
                     <View style={styles.aboutRow}>
-                        <Text style={[styles.aboutLabel, { color: colors.text }]}>Aplikacja</Text>
-                        <Text style={[styles.aboutValue, { color: colors.textSecondary }]}>WAT Helpdesk Mobile</Text>
+                        <Text style={[styles.aboutLabel, { color: colors.text }]}>
+                            {language === 'pl' ? 'Aplikacja' : 'App'}
+                        </Text>
+                        <Text style={[styles.aboutValue, { color: colors.textSecondary }]}>{t.settings.appName}</Text>
                     </View>
                 </View>
             </ScrollView>
@@ -213,9 +236,14 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+        paddingVertical: 4,
     },
     settingLabel: {
         fontSize: 16,
+    },
+    settingValue: {
+        fontSize: 14,
+        fontWeight: '500',
     },
     aboutRow: {
         flexDirection: 'row',
