@@ -11,15 +11,15 @@ import {
     ActivityIndicator,
     SafeAreaView,
 } from 'react-native';
-import { DrawerScreenProps } from '@react-navigation/drawer';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Markdown from 'react-native-markdown-display';
-import { DrawerParamList } from '../navigation/AppNavigator';
+import { RootStackParamList } from '../navigation/AppNavigator';
 import { chatService, SendMessageResponse } from '../services/chatService';
 import { authService } from '../services/authService';
 import type { Message, User } from '../types';
 import { useTheme } from '../hooks/useTheme';
 
-type Props = DrawerScreenProps<DrawerParamList, 'Chat'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
 
 export function ChatScreen({ route, navigation }: Props) {
     const { colors, isDark } = useTheme();
@@ -43,6 +43,28 @@ export function ChatScreen({ route, navigation }: Props) {
             loadSessionMessages(route.params.sessionId);
         }
     }, [route.params?.sessionId]);
+
+    // Set up header buttons
+    useEffect(() => {
+        navigation.setOptions({
+            headerRight: () => (
+                <View style={styles.headerButtons}>
+                    <TouchableOpacity
+                        style={styles.headerButton}
+                        onPress={() => navigation.navigate('Sessions')}
+                    >
+                        <Text style={styles.headerButtonText}>📋</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.headerButton}
+                        onPress={() => navigation.navigate('Settings')}
+                    >
+                        <Text style={styles.headerButtonText}>⚙️</Text>
+                    </TouchableOpacity>
+                </View>
+            ),
+        });
+    }, [navigation]);
 
     const loadUser = async () => {
         const currentUser = await authService.getCurrentUser();
@@ -201,6 +223,15 @@ export function ChatScreen({ route, navigation }: Props) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+    },
+    headerButtons: {
+        flexDirection: 'row',
+    },
+    headerButton: {
+        marginLeft: 12,
+    },
+    headerButtonText: {
+        fontSize: 20,
     },
     messagesList: {
         padding: 16,

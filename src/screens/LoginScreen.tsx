@@ -33,8 +33,9 @@ export function LoginScreen({ navigation }: Props) {
             const user = await authService.getCurrentUser();
 
             if (user) {
-                Alert.alert('Sukces', `Zalogowano jako ${user.first_name} ${user.last_name}`);
-                navigation.goBack();
+                Alert.alert('Sukces', `Zalogowano jako ${user.first_name} ${user.last_name}`, [
+                    { text: 'OK', onPress: () => navigation.goBack() }
+                ]);
             } else {
                 await authService.removeToken();
                 Alert.alert('Błąd', 'Nieprawidłowy token');

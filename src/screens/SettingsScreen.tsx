@@ -9,13 +9,13 @@ import {
     ScrollView,
     Alert,
 } from 'react-native';
-import { DrawerScreenProps } from '@react-navigation/drawer';
-import { DrawerParamList } from '../navigation/AppNavigator';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
 import { authService } from '../services/authService';
 import type { User } from '../types';
 import { useTheme } from '../hooks/useTheme';
 
-type Props = DrawerScreenProps<DrawerParamList, 'Settings'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
 export function SettingsScreen({ navigation }: Props) {
     const { colors, isDark, toggleTheme } = useTheme();
@@ -42,18 +42,22 @@ export function SettingsScreen({ navigation }: Props) {
                     onPress: async () => {
                         await authService.logout();
                         setUser(null);
-                        navigation.navigate('Chat');
+                        navigation.navigate('Chat', {});
                     },
                 },
             ]
         );
     };
 
+    const handleLogin = () => {
+        navigation.navigate('Login');
+    };
+
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <ScrollView contentContainerStyle={styles.content}>
                 {/* User Section */}
-                {user && (
+                {user ? (
                     <View style={[styles.section, { backgroundColor: colors.surface }]}>
                         <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
                             KONTO
@@ -78,6 +82,21 @@ export function SettingsScreen({ navigation }: Props) {
                             onPress={handleLogout}
                         >
                             <Text style={styles.logoutText}>Wyloguj się</Text>
+                        </TouchableOpacity>
+                    </View>
+                ) : (
+                    <View style={[styles.section, { backgroundColor: colors.surface }]}>
+                        <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+                            KONTO
+                        </Text>
+                        <Text style={[styles.notLoggedIn, { color: colors.text }]}>
+                            Nie jesteś zalogowany
+                        </Text>
+                        <TouchableOpacity
+                            style={[styles.loginButton, { backgroundColor: colors.primary }]}
+                            onPress={handleLogin}
+                        >
+                            <Text style={styles.loginText}>Zaloguj się</Text>
                         </TouchableOpacity>
                     </View>
                 )}
@@ -166,12 +185,26 @@ const styles = StyleSheet.create({
     userStatus: {
         fontSize: 14,
     },
+    notLoggedIn: {
+        fontSize: 16,
+        marginBottom: 16,
+    },
     logoutButton: {
         padding: 12,
         borderRadius: 8,
         alignItems: 'center',
     },
     logoutText: {
+        color: '#FFFFFF',
+        fontWeight: '600',
+        fontSize: 16,
+    },
+    loginButton: {
+        padding: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+    },
+    loginText: {
         color: '#FFFFFF',
         fontWeight: '600',
         fontSize: 16,

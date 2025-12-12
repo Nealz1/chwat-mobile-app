@@ -9,14 +9,14 @@ import {
     Alert,
     RefreshControl,
 } from 'react-native';
-import { DrawerScreenProps } from '@react-navigation/drawer';
-import { DrawerParamList } from '../navigation/AppNavigator';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
 import { chatService } from '../services/chatService';
 import { authService } from '../services/authService';
 import type { ChatSession, User } from '../types';
 import { useTheme } from '../hooks/useTheme';
 
-type Props = DrawerScreenProps<DrawerParamList, 'Sessions'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'Sessions'>;
 
 export function SessionsScreen({ navigation }: Props) {
     const { colors } = useTheme();
@@ -113,9 +113,9 @@ export function SessionsScreen({ navigation }: Props) {
                     </Text>
                     <TouchableOpacity
                         style={[styles.loginButton, { backgroundColor: colors.primary }]}
-                        onPress={() => navigation.navigate('Chat' as any)}
+                        onPress={() => navigation.navigate('Login')}
                     >
-                        <Text style={styles.loginButtonText}>Powrót do czatu</Text>
+                        <Text style={styles.loginButtonText}>Zaloguj się</Text>
                     </TouchableOpacity>
                 </View>
             </SafeAreaView>
