@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "frontend-mobile",
-    "slug": "frontend-mobile",
+    "name": "WAT Helpdesk",
+    "slug": "wat-helpdesk-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
