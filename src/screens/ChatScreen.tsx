@@ -189,8 +189,8 @@ export function ChatScreen({ route, navigation }: Props) {
             />
             <KeyboardAvoidingView
                 style={styles.container}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 60}
             >
                 {/* Messages List */}
                 <FlatList
@@ -199,6 +199,7 @@ export function ChatScreen({ route, navigation }: Props) {
                     keyExtractor={(_, index) => index.toString()}
                     contentContainerStyle={styles.messagesList}
                     inverted={false}
+                    keyboardShouldPersistTaps="handled"
                 />
 
                 {/* Input Area */}
@@ -206,7 +207,7 @@ export function ChatScreen({ route, navigation }: Props) {
                     styles.inputContainer,
                     {
                         backgroundColor: colors.surface,
-                        marginBottom: Platform.OS === 'android' && keyboardHeight > 0 ? 8 : 48,
+                        paddingBottom: keyboardHeight > 0 ? 12 : 48,
                     }
                 ]}>
                     <TextInput
