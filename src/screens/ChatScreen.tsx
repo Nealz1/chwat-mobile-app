@@ -10,6 +10,7 @@ import {
     Platform,
     ActivityIndicator,
     SafeAreaView,
+    Keyboard,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Markdown from 'react-native-markdown-display';
@@ -37,9 +38,24 @@ export function ChatScreen({ route, navigation }: Props) {
         route.params?.sessionId
     );
     const [menuVisible, setMenuVisible] = useState(false);
+    const [keyboardHeight, setKeyboardHeight] = useState(0);
 
     useEffect(() => {
         loadUser();
+    }, []);
+
+    // Keyboard listener for Android
+    useEffect(() => {
+        const showSub = Keyboard.addListener('keyboardDidShow', (e) => {
+            setKeyboardHeight(e.endCoordinates.height);
+        });
+        const hideSub = Keyboard.addListener('keyboardDidHide', () => {
+            setKeyboardHeight(0);
+        });
+        return () => {
+            showSub.remove();
+            hideSub.remove();
+        };
     }, []);
 
     useEffect(() => {
@@ -186,7 +202,13 @@ export function ChatScreen({ route, navigation }: Props) {
                 />
 
                 {/* Input Area */}
-                <View style={[styles.inputContainer, { backgroundColor: colors.surface }]}>
+                <View style={[
+                    styles.inputContainer,
+                    {
+                        backgroundColor: colors.surface,
+                        paddingBottom: Platform.OS === 'android' ? keyboardHeight + 16 : 48,
+                    }
+                ]}>
                     <TextInput
                         style={[styles.input, { color: colors.text, backgroundColor: colors.background }]}
                         value={inputText}
