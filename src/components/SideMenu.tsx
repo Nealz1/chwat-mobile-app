@@ -5,13 +5,12 @@ import {
     FlatList,
     TouchableOpacity,
     StyleSheet,
-    Image,
     TextInput,
     Modal,
     Animated,
     Dimensions,
-    RefreshControl,
     Pressable,
+    ScrollView,
 } from 'react-native';
 import { chatService } from '../services/chatService';
 import { authService } from '../services/authService';
@@ -19,8 +18,7 @@ import type { ChatSession, User } from '../types';
 import { useTheme } from '../hooks/useTheme';
 import { useLanguage } from '../contexts/LanguageContext';
 
-const watLogo = require('../../assets/wat_logo_light.png');
-const DRAWER_WIDTH = Dimensions.get('window').width * 0.8;
+const DRAWER_WIDTH = Dimensions.get('window').width * 0.85;
 
 interface SideMenuProps {
     visible: boolean;
@@ -29,11 +27,10 @@ interface SideMenuProps {
 }
 
 export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
-    const { colors } = useTheme();
+    const { colors, isDark } = useTheme();
     const { language, t } = useLanguage();
     const [user, setUser] = useState<User | null>(null);
     const [sessions, setSessions] = useState<ChatSession[]>([]);
-    const [refreshing, setRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [slideAnim] = useState(new Animated.Value(-DRAWER_WIDTH));
 
@@ -71,12 +68,6 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
         }
     };
 
-    const onRefresh = useCallback(async () => {
-        setRefreshing(true);
-        await loadSessions();
-        setRefreshing(false);
-    }, []);
-
     const handleNewChat = () => {
         onClose();
         navigation.navigate('Chat', {});
@@ -96,10 +87,21 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
         s.title.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const pinnedSessions = filteredSessions.filter(s => s.is_pinned);
-    const regularSessions = filteredSessions.filter(s => !s.is_pinned);
+    // Group sessions by date
+    const today = new Date();
+    const todaySessions = filteredSessions.filter(s => {
+        const d = new Date(s.updated_at);
+        return d.toDateString() === today.toDateString();
+    });
+    const recentSessions = filteredSessions.filter(s => {
+        const d = new Date(s.updated_at);
+        return d.toDateString() !== today.toDateString();
+    });
 
     if (!visible) return null;
+
+    const borderColor = isDark ? '#3d3d3d' : '#e0e0e0';
+    const bgColor = isDark ? colors.sidebar : '#ffffff';
 
     return (
         <Modal
@@ -112,84 +114,67 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                 <Animated.View
                     style={[
                         styles.drawer,
-                        { backgroundColor: colors.background, transform: [{ translateX: slideAnim }] }
+                        { backgroundColor: bgColor, transform: [{ translateX: slideAnim }] }
                     ]}
                 >
-                    <Pressable onPress={() => { }}>
+                    <Pressable style={styles.drawerContent}>
                         {/* Header */}
                         <View style={styles.header}>
-                            <Image source={watLogo} style={styles.headerLogo} resizeMode="contain" />
-                            <Text style={styles.headerTitle}>HELPDesk</Text>
+                            <Text style={styles.headerIcon}>🏛️</Text>
+                            <Text style={[styles.headerTitle, { color: colors.text }]}>HELPDesk</Text>
                         </View>
 
-                        {/* User Info */}
-                        {user ? (
+                        <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                            {/* New Chat Button */}
                             <TouchableOpacity
-                                style={[styles.userSection, { borderBottomColor: colors.border }]}
-                                onPress={() => navigateTo('Settings')}
+                                style={[styles.outlinedButton, { borderColor }]}
+                                onPress={handleNewChat}
                             >
-                                <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
-                                    <Text style={styles.avatarText}>
-                                        {user.first_name[0]}{user.last_name[0]}
-                                    </Text>
-                                </View>
-                                <View style={styles.userInfo}>
-                                    <Text style={[styles.userName, { color: colors.text }]}>
-                                        {user.first_name} {user.last_name}
-                                    </Text>
-                                    <Text style={[styles.userStatus, { color: colors.textSecondary }]}>
-                                        Student
-                                    </Text>
-                                </View>
-                            </TouchableOpacity>
-                        ) : (
-                            <TouchableOpacity
-                                style={[styles.loginSection, { borderBottomColor: colors.border }]}
-                                onPress={() => navigateTo('Login')}
-                            >
-                                <Text style={[styles.loginText, { color: colors.primary }]}>
-                                    {t.settings?.login || 'Zaloguj się'}
+                                <Text style={[styles.outlinedButtonText, { color: colors.text }]}>
+                                    + {language === 'pl' ? 'Nowa rozmowa' : 'New chat'}
                                 </Text>
                             </TouchableOpacity>
-                        )}
 
-                        {/* New Chat Button */}
-                        <TouchableOpacity
-                            style={[styles.newChatButton, { backgroundColor: colors.primary }]}
-                            onPress={handleNewChat}
-                        >
-                            <Text style={styles.newChatIcon}>+</Text>
-                            <Text style={styles.newChatText}>{t.chat?.newChat || 'Nowa rozmowa'}</Text>
-                        </TouchableOpacity>
+                            {/* Search */}
+                            <View style={[styles.searchContainer, { borderColor }]}>
+                                <Text style={styles.searchIcon}>🔍</Text>
+                                <TextInput
+                                    style={[styles.searchInput, { color: colors.text }]}
+                                    placeholder={language === 'pl' ? 'Szukaj rozmów' : 'Search chats'}
+                                    placeholderTextColor={colors.textSecondary}
+                                    value={searchQuery}
+                                    onChangeText={setSearchQuery}
+                                />
+                            </View>
 
-                        {/* Search */}
-                        <View style={[styles.searchContainer, { backgroundColor: colors.surface }]}>
-                            <Text style={styles.searchIcon}>🔍</Text>
-                            <TextInput
-                                style={[styles.searchInput, { color: colors.text }]}
-                                placeholder={language === 'pl' ? 'Szukaj rozmów...' : 'Search chats...'}
-                                placeholderTextColor={colors.textSecondary}
-                                value={searchQuery}
-                                onChangeText={setSearchQuery}
-                            />
-                        </View>
+                            {/* Groups */}
+                            <TouchableOpacity
+                                style={[styles.outlinedButton, { borderColor }]}
+                                onPress={() => navigateTo('Groups')}
+                            >
+                                <Text style={styles.buttonIcon}>📁</Text>
+                                <Text style={[styles.outlinedButtonText, { color: colors.text }]}>
+                                    {language === 'pl' ? 'Grupy' : 'Groups'}
+                                </Text>
+                            </TouchableOpacity>
 
-                        {/* Navigation */}
-                        <TouchableOpacity style={styles.navItem} onPress={() => navigateTo('Groups')}>
-                            <Text style={styles.navIcon}>📁</Text>
-                            <Text style={[styles.navLabel, { color: colors.text }]}>
-                                {language === 'pl' ? 'Grupy' : 'Groups'}
+                            {/* Section: GRUPY */}
+                            <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
+                                GRUPY
                             </Text>
-                        </TouchableOpacity>
+                            <TouchableOpacity style={styles.sessionItem} onPress={() => navigateTo('Groups')}>
+                                <Text style={styles.sessionIcon}>📁</Text>
+                                <Text style={[styles.sessionTitle, { color: colors.text }]}>g1</Text>
+                                <Text style={styles.chevron}>›</Text>
+                            </TouchableOpacity>
 
-                        {/* Sessions */}
-                        <View style={styles.sessionsSection}>
-                            {pinnedSessions.length > 0 && (
+                            {/* Section: DZIŚ */}
+                            {todaySessions.length > 0 && (
                                 <>
                                     <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
-                                        📌 {language === 'pl' ? 'Przypięte' : 'Pinned'}
+                                        {language === 'pl' ? 'DZIŚ' : 'TODAY'}
                                     </Text>
-                                    {pinnedSessions.map(session => (
+                                    {todaySessions.map(session => (
                                         <TouchableOpacity
                                             key={session.id}
                                             style={styles.sessionItem}
@@ -207,49 +192,55 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                 </>
                             )}
 
-                            <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
-                                {language === 'pl' ? 'Ostatnie' : 'Recent'}
-                            </Text>
-                            <FlatList
-                                data={regularSessions.slice(0, 8)}
-                                keyExtractor={(item) => item.id.toString()}
-                                style={{ maxHeight: 200 }}
-                                renderItem={({ item }) => (
-                                    <TouchableOpacity
-                                        style={styles.sessionItem}
-                                        onPress={() => handleOpenChat(item)}
-                                    >
-                                        <Text style={styles.sessionIcon}>💬</Text>
-                                        <Text
-                                            style={[styles.sessionTitle, { color: colors.text }]}
-                                            numberOfLines={1}
-                                        >
-                                            {item.title}
-                                        </Text>
-                                    </TouchableOpacity>
-                                )}
-                                ListEmptyComponent={
-                                    <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-                                        {language === 'pl' ? 'Brak rozmów' : 'No chats'}
+                            {/* Section: OSTATNIE 30 DNI */}
+                            {recentSessions.length > 0 && (
+                                <>
+                                    <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
+                                        {language === 'pl' ? 'OSTATNIE 30 DNI' : 'LAST 30 DAYS'}
                                     </Text>
-                                }
-                            />
-                        </View>
+                                    {recentSessions.slice(0, 10).map(session => (
+                                        <TouchableOpacity
+                                            key={session.id}
+                                            style={styles.sessionItem}
+                                            onPress={() => handleOpenChat(session)}
+                                        >
+                                            <Text style={styles.sessionIcon}>💬</Text>
+                                            <Text
+                                                style={[styles.sessionTitle, { color: colors.text }]}
+                                                numberOfLines={1}
+                                            >
+                                                {session.title}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </>
+                            )}
+                        </ScrollView>
 
-                        {/* Bottom Navigation */}
-                        <View style={[styles.bottomSection, { borderTopColor: colors.border }]}>
-                            <TouchableOpacity style={styles.navItem} onPress={() => navigateTo('Sessions')}>
-                                <Text style={styles.navIcon}>📋</Text>
-                                <Text style={[styles.navLabel, { color: colors.text }]}>Historia</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.navItem} onPress={() => navigateTo('Help')}>
-                                <Text style={styles.navIcon}>❓</Text>
-                                <Text style={[styles.navLabel, { color: colors.text }]}>Pomoc</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.navItem} onPress={() => navigateTo('Settings')}>
-                                <Text style={styles.navIcon}>⚙️</Text>
-                                <Text style={[styles.navLabel, { color: colors.text }]}>Ustawienia</Text>
-                            </TouchableOpacity>
+                        {/* Bottom: User */}
+                        <View style={[styles.bottomSection, { borderTopColor: borderColor }]}>
+                            {user ? (
+                                <TouchableOpacity
+                                    style={styles.userSection}
+                                    onPress={() => navigateTo('Settings')}
+                                >
+                                    <Text style={styles.userIcon}>👤</Text>
+                                    <Text style={[styles.userName, { color: colors.text }]} numberOfLines={1}>
+                                        {user.first_name} {user.last_name}
+                                    </Text>
+                                    <Text style={styles.menuDots}>⋮</Text>
+                                </TouchableOpacity>
+                            ) : (
+                                <TouchableOpacity
+                                    style={styles.userSection}
+                                    onPress={() => navigateTo('Login')}
+                                >
+                                    <Text style={styles.userIcon}>👤</Text>
+                                    <Text style={[styles.userName, { color: colors.primary }]}>
+                                        {language === 'pl' ? 'Zaloguj się' : 'Login'}
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
                         </View>
                     </Pressable>
                 </Animated.View>
@@ -261,96 +252,61 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(0,0,0,0.3)',
     },
     drawer: {
         width: DRAWER_WIDTH,
         height: '100%',
         shadowColor: '#000',
         shadowOffset: { width: 2, height: 0 },
-        shadowOpacity: 0.3,
-        shadowRadius: 5,
+        shadowOpacity: 0.2,
+        shadowRadius: 10,
         elevation: 10,
+    },
+    drawerContent: {
+        flex: 1,
     },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         padding: 16,
         paddingTop: 48,
-        backgroundColor: '#1f1f1f',
     },
-    headerLogo: {
-        width: 32,
-        height: 32,
-        marginRight: 10,
+    headerIcon: {
+        fontSize: 24,
+        marginRight: 8,
     },
     headerTitle: {
-        color: '#FFFFFF',
         fontSize: 20,
         fontWeight: '700',
     },
-    userSection: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 16,
-        borderBottomWidth: 1,
-    },
-    avatar: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    avatarText: {
-        color: '#FFFFFF',
-        fontSize: 14,
-        fontWeight: '600',
-    },
-    userInfo: {
-        marginLeft: 12,
+    scrollContent: {
         flex: 1,
+        paddingHorizontal: 12,
     },
-    userName: {
-        fontSize: 15,
-        fontWeight: '600',
-    },
-    userStatus: {
-        fontSize: 13,
-    },
-    loginSection: {
-        padding: 16,
-        borderBottomWidth: 1,
-    },
-    loginText: {
-        fontSize: 16,
-        fontWeight: '500',
-    },
-    newChatButton: {
+    outlinedButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        margin: 12,
-        padding: 12,
+        paddingVertical: 12,
+        paddingHorizontal: 14,
+        borderWidth: 1,
         borderRadius: 8,
+        marginBottom: 8,
     },
-    newChatIcon: {
-        color: '#FFFFFF',
-        fontSize: 20,
+    buttonIcon: {
+        fontSize: 16,
         marginRight: 8,
-        fontWeight: '600',
     },
-    newChatText: {
-        color: '#FFFFFF',
+    outlinedButtonText: {
         fontSize: 15,
-        fontWeight: '600',
     },
     searchContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginHorizontal: 12,
-        marginBottom: 8,
+        paddingHorizontal: 12,
+        borderWidth: 1,
         borderRadius: 8,
-        paddingHorizontal: 10,
+        marginBottom: 8,
     },
     searchIcon: {
         fontSize: 14,
@@ -359,54 +315,53 @@ const styles = StyleSheet.create({
     searchInput: {
         flex: 1,
         paddingVertical: 10,
-        fontSize: 14,
-    },
-    navItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 12,
-        paddingHorizontal: 16,
-    },
-    navIcon: {
-        fontSize: 16,
-        marginRight: 12,
-    },
-    navLabel: {
         fontSize: 15,
     },
-    sessionsSection: {
-        flex: 1,
-        paddingHorizontal: 8,
-    },
     sectionLabel: {
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: '600',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        textTransform: 'uppercase',
         letterSpacing: 0.5,
+        marginTop: 16,
+        marginBottom: 8,
+        paddingHorizontal: 4,
     },
     sessionItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 10,
-        paddingHorizontal: 12,
-        borderRadius: 6,
+        paddingVertical: 10,
+        paddingHorizontal: 4,
     },
     sessionIcon: {
-        fontSize: 14,
+        fontSize: 16,
         marginRight: 10,
     },
     sessionTitle: {
-        fontSize: 14,
+        fontSize: 15,
         flex: 1,
     },
-    emptyText: {
-        padding: 12,
-        fontSize: 14,
+    chevron: {
+        fontSize: 18,
+        color: '#888',
     },
     bottomSection: {
         borderTopWidth: 1,
+        padding: 12,
+    },
+    userSection: {
+        flexDirection: 'row',
+        alignItems: 'center',
         paddingVertical: 8,
+    },
+    userIcon: {
+        fontSize: 18,
+        marginRight: 10,
+    },
+    userName: {
+        fontSize: 15,
+        flex: 1,
+    },
+    menuDots: {
+        fontSize: 18,
+        color: '#888',
     },
 });
