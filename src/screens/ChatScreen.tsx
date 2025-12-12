@@ -19,6 +19,7 @@ import { authService } from '../services/authService';
 import type { Message, User } from '../types';
 import { useTheme } from '../hooks/useTheme';
 import { useLanguage } from '../contexts/LanguageContext';
+import { BackgroundLogo } from '../components/BackgroundLogo';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
 
@@ -184,6 +185,7 @@ export function ChatScreen({ route, navigation }: Props) {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+            <BackgroundLogo />
             <KeyboardAvoidingView
                 style={styles.container}
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
