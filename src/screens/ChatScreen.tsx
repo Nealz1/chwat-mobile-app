@@ -206,7 +206,7 @@ export function ChatScreen({ route, navigation }: Props) {
                     styles.inputContainer,
                     {
                         backgroundColor: colors.surface,
-                        paddingBottom: Platform.OS === 'android' ? keyboardHeight + 16 : 48,
+                        marginBottom: Platform.OS === 'android' && keyboardHeight > 0 ? 8 : 48,
                     }
                 ]}>
                     <TextInput
