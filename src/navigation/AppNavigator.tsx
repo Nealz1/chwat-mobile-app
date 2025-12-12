@@ -26,7 +26,7 @@ export function AppNavigator() {
                 initialRouteName="Chat"
                 screenOptions={{
                     headerStyle: {
-                        backgroundColor: '#a51d22',
+                        backgroundColor: '#1f1f1f',
                     },
                     headerTintColor: '#fff',
                     headerTitleStyle: {

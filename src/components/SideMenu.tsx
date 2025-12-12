@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 16,
         paddingTop: 48,
-        backgroundColor: '#a51d22',
+        backgroundColor: '#1f1f1f',
     },
     headerLogo: {
         width: 32,

@@ -7,38 +7,48 @@ export interface ThemeColors {
     primary: string;
     background: string;
     surface: string;
+    surfaceAlt: string;
+    sidebar: string;
     text: string;
     textSecondary: string;
     border: string;
     error: string;
     success: string;
+    header: string;
 }
 
+// Matching web frontend colors
 const lightColors: ThemeColors = {
-    primary: '#007AFF',
-    background: '#F2F2F7',
-    surface: '#FFFFFF',
-    text: '#000000',
-    textSecondary: '#8E8E93',
-    border: '#C6C6C8',
-    error: '#FF3B30',
-    success: '#34C759',
+    primary: '#e67e22', // Orange accent like web
+    background: '#ffffff',
+    surface: '#f5f5f5',
+    surfaceAlt: '#e8e8e8',
+    sidebar: '#2d2d2d',
+    text: '#1a1a1a',
+    textSecondary: '#6b6b6b',
+    border: '#e0e0e0',
+    error: '#e74c3c',
+    success: '#27ae60',
+    header: '#2d2d2d',
 };
 
 const darkColors: ThemeColors = {
-    primary: '#0A84FF',
-    background: '#000000',
-    surface: '#1C1C1E',
-    text: '#FFFFFF',
-    textSecondary: '#8E8E93',
-    border: '#38383A',
-    error: '#FF453A',
-    success: '#30D158',
+    primary: '#e67e22', // Orange accent like web
+    background: '#1a1a1a',
+    surface: '#252525',
+    surfaceAlt: '#2d2d2d',
+    sidebar: '#1a1a1a',
+    text: '#ffffff',
+    textSecondary: '#888888',
+    border: '#3d3d3d',
+    error: '#e74c3c',
+    success: '#27ae60',
+    header: '#1f1f1f',
 };
 
 export function useTheme() {
     const systemColorScheme = useColorScheme();
-    const [isDark, setIsDark] = useState(systemColorScheme === 'dark');
+    const [isDark, setIsDark] = useState(true); // Default to dark like web
 
     useEffect(() => {
         loadTheme();
