@@ -189,8 +189,8 @@ export function ChatScreen({ route, navigation }: Props) {
             />
             <KeyboardAvoidingView
                 style={styles.container}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 60}
+                behavior="padding"
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 120}
             >
                 {/* Messages List */}
                 <FlatList
