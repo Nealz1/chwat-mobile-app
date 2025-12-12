@@ -20,6 +20,7 @@ import type { Message, User } from '../types';
 import { useTheme } from '../hooks/useTheme';
 import { useLanguage } from '../contexts/LanguageContext';
 import { BackgroundLogo } from '../components/BackgroundLogo';
+import { SideMenu } from '../components/SideMenu';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
 
@@ -35,6 +36,7 @@ export function ChatScreen({ route, navigation }: Props) {
     const [currentSessionId, setCurrentSessionId] = useState<number | undefined>(
         route.params?.sessionId
     );
+    const [menuVisible, setMenuVisible] = useState(false);
 
     useEffect(() => {
         loadUser();
@@ -53,7 +55,7 @@ export function ChatScreen({ route, navigation }: Props) {
             headerLeft: () => (
                 <TouchableOpacity
                     style={styles.menuButton}
-                    onPress={() => (navigation as any).getParent()?.openDrawer()}
+                    onPress={() => setMenuVisible(true)}
                 >
                     <Text style={styles.menuButtonText}>☰</Text>
                 </TouchableOpacity>
@@ -90,7 +92,6 @@ export function ChatScreen({ route, navigation }: Props) {
         setInputText('');
         setIsLoading(true);
 
-        // Add loading indicator
         setMessages(prev => [...prev, { sender: 'bot', text: '', isLoading: true }]);
 
         try {
@@ -105,7 +106,6 @@ export function ChatScreen({ route, navigation }: Props) {
                 response = await chatService.sendGuestMessage(inputText.trim());
             }
 
-            // Replace loading message with actual response
             setMessages(prev => [
                 ...prev.slice(0, -1),
                 {
@@ -166,6 +166,11 @@ export function ChatScreen({ route, navigation }: Props) {
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <BackgroundLogo />
+            <SideMenu
+                visible={menuVisible}
+                onClose={() => setMenuVisible(false)}
+                navigation={navigation}
+            />
             <KeyboardAvoidingView
                 style={styles.container}
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
