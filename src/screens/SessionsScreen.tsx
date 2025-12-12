@@ -9,13 +9,14 @@ import {
     Alert,
     RefreshControl,
     TextInput,
-    ActionSheetIOS,
+    Modal,
     Platform,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { chatService } from '../services/chatService';
 import { authService } from '../services/authService';
+import { groupsService, Group } from '../services/groupsService';
 import type { ChatSession, User } from '../types';
 import { useTheme } from '../hooks/useTheme';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -33,6 +34,16 @@ export function SessionsScreen({ navigation }: Props) {
     const [searchQuery, setSearchQuery] = useState('');
     const [activeTab, setActiveTab] = useState<TabType>('active');
 
+    // Rename modal state
+    const [renameModalVisible, setRenameModalVisible] = useState(false);
+    const [sessionToRename, setSessionToRename] = useState<ChatSession | null>(null);
+    const [newTitle, setNewTitle] = useState('');
+
+    // Add to group modal state
+    const [groupModalVisible, setGroupModalVisible] = useState(false);
+    const [sessionForGroup, setSessionForGroup] = useState<ChatSession | null>(null);
+    const [groups, setGroups] = useState<Group[]>([]);
+
     useEffect(() => {
         loadData();
     }, []);
@@ -46,22 +57,31 @@ export function SessionsScreen({ navigation }: Props) {
         setUser(currentUser);
         if (currentUser) {
             await loadSessions();
+            await loadGroups();
         }
     };
 
     const loadSessions = async () => {
         try {
-            const data = await chatService.getSessions(true); // Include archived
+            const data = await chatService.getSessions(true);
             setAllSessions(data);
         } catch (error) {
             console.error('Error loading sessions:', error);
         }
     };
 
+    const loadGroups = async () => {
+        try {
+            const data = await groupsService.getGroups();
+            setGroups(data);
+        } catch (error) {
+            console.error('Error loading groups:', error);
+        }
+    };
+
     const filterSessions = () => {
         let filtered = allSessions;
 
-        // Filter by tab
         switch (activeTab) {
             case 'pinned':
                 filtered = filtered.filter(s => s.is_pinned && !s.is_archived);
@@ -75,12 +95,9 @@ export function SessionsScreen({ navigation }: Props) {
                 break;
         }
 
-        // Filter by search
         if (searchQuery.trim()) {
             const query = searchQuery.toLowerCase();
-            filtered = filtered.filter(s =>
-                s.title.toLowerCase().includes(query)
-            );
+            filtered = filtered.filter(s => s.title.toLowerCase().includes(query));
         }
 
         setSessions(filtered);
@@ -97,67 +114,76 @@ export function SessionsScreen({ navigation }: Props) {
     };
 
     const showSessionOptions = (session: ChatSession) => {
+        const renameText = language === 'pl' ? 'Zmień nazwę' : 'Rename';
+        const addToGroupText = language === 'pl' ? 'Dodaj do grupy' : 'Add to group';
+
         const options = [
-            t.common.cancel,
-            session.is_pinned ? t.common.unpin : t.common.pin,
-            session.is_archived ? t.common.unarchive : t.common.archive,
-            t.common.delete,
+            { text: t.common.cancel, style: 'cancel' as const },
+            {
+                text: renameText,
+                onPress: () => {
+                    setSessionToRename(session);
+                    setNewTitle(session.title);
+                    setRenameModalVisible(true);
+                },
+            },
+            {
+                text: session.is_pinned ? t.common.unpin : t.common.pin,
+                onPress: async () => {
+                    await chatService.pinSession(session.id, !session.is_pinned);
+                    await loadSessions();
+                },
+            },
+            {
+                text: session.is_archived ? t.common.unarchive : t.common.archive,
+                onPress: async () => {
+                    if (session.is_archived) {
+                        await chatService.unarchiveSession(session.id);
+                    } else {
+                        await chatService.archiveSession(session.id);
+                    }
+                    await loadSessions();
+                },
+            },
+            {
+                text: addToGroupText,
+                onPress: () => {
+                    setSessionForGroup(session);
+                    setGroupModalVisible(true);
+                },
+            },
+            {
+                text: t.common.delete,
+                style: 'destructive' as const,
+                onPress: () => confirmDelete(session),
+            },
         ];
 
-        if (Platform.OS === 'ios') {
-            ActionSheetIOS.showActionSheetWithOptions(
-                {
-                    options,
-                    cancelButtonIndex: 0,
-                    destructiveButtonIndex: 3,
-                },
-                async (buttonIndex) => {
-                    if (buttonIndex === 1) {
-                        await chatService.pinSession(session.id, !session.is_pinned);
-                        await loadSessions();
-                    } else if (buttonIndex === 2) {
-                        if (session.is_archived) {
-                            await chatService.unarchiveSession(session.id);
-                        } else {
-                            await chatService.archiveSession(session.id);
-                        }
-                        await loadSessions();
-                    } else if (buttonIndex === 3) {
-                        confirmDelete(session);
-                    }
-                }
-            );
-        } else {
-            // Android fallback with Alert
+        Alert.alert(
+            session.title,
+            language === 'pl' ? 'Wybierz akcję' : 'Choose action',
+            options
+        );
+    };
+
+    const handleRename = async () => {
+        if (sessionToRename && newTitle.trim()) {
+            await chatService.updateSessionTitle(sessionToRename.id, newTitle.trim());
+            setRenameModalVisible(false);
+            setSessionToRename(null);
+            setNewTitle('');
+            await loadSessions();
+        }
+    };
+
+    const handleAddToGroup = async (groupId: number) => {
+        if (sessionForGroup) {
+            await groupsService.addSessionToGroup(sessionForGroup.id, groupId);
+            setGroupModalVisible(false);
+            setSessionForGroup(null);
             Alert.alert(
-                session.title,
-                language === 'pl' ? 'Wybierz akcję' : 'Choose action',
-                [
-                    { text: t.common.cancel, style: 'cancel' },
-                    {
-                        text: session.is_pinned ? t.common.unpin : t.common.pin,
-                        onPress: async () => {
-                            await chatService.pinSession(session.id, !session.is_pinned);
-                            await loadSessions();
-                        },
-                    },
-                    {
-                        text: session.is_archived ? t.common.unarchive : t.common.archive,
-                        onPress: async () => {
-                            if (session.is_archived) {
-                                await chatService.unarchiveSession(session.id);
-                            } else {
-                                await chatService.archiveSession(session.id);
-                            }
-                            await loadSessions();
-                        },
-                    },
-                    {
-                        text: t.common.delete,
-                        style: 'destructive',
-                        onPress: () => confirmDelete(session),
-                    },
-                ]
+                '✅',
+                language === 'pl' ? 'Dodano do grupy' : 'Added to group'
             );
         }
     };
@@ -284,6 +310,93 @@ export function SessionsScreen({ navigation }: Props) {
                     }
                 />
             )}
+
+            {/* Rename Modal */}
+            <Modal
+                visible={renameModalVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setRenameModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+                        <Text style={[styles.modalTitle, { color: colors.text }]}>
+                            {language === 'pl' ? 'Zmień nazwę' : 'Rename'}
+                        </Text>
+                        <TextInput
+                            style={[styles.modalInput, { color: colors.text, backgroundColor: colors.background }]}
+                            value={newTitle}
+                            onChangeText={setNewTitle}
+                            placeholder={language === 'pl' ? 'Nowa nazwa...' : 'New name...'}
+                            placeholderTextColor={colors.textSecondary}
+                            autoFocus
+                        />
+                        <View style={styles.modalButtons}>
+                            <TouchableOpacity
+                                style={[styles.modalButton, { backgroundColor: colors.border }]}
+                                onPress={() => {
+                                    setRenameModalVisible(false);
+                                    setSessionToRename(null);
+                                }}
+                            >
+                                <Text style={[styles.modalButtonText, { color: colors.text }]}>
+                                    {t.common.cancel}
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.modalButton, { backgroundColor: colors.primary }]}
+                                onPress={handleRename}
+                            >
+                                <Text style={styles.modalButtonText}>{t.common.confirm}</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Add to Group Modal */}
+            <Modal
+                visible={groupModalVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setGroupModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+                        <Text style={[styles.modalTitle, { color: colors.text }]}>
+                            {language === 'pl' ? 'Wybierz grupę' : 'Select group'}
+                        </Text>
+                        {groups.length === 0 ? (
+                            <Text style={[styles.noGroupsText, { color: colors.textSecondary }]}>
+                                {language === 'pl' ? 'Brak grup' : 'No groups'}
+                            </Text>
+                        ) : (
+                            groups.map(group => (
+                                <TouchableOpacity
+                                    key={group.id}
+                                    style={[styles.groupOption, { backgroundColor: colors.background }]}
+                                    onPress={() => handleAddToGroup(group.id)}
+                                >
+                                    <Text style={[styles.groupOptionText, { color: colors.text }]}>
+                                        📁 {group.name}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))
+                        )}
+                        <TouchableOpacity
+                            style={[styles.cancelButton, { backgroundColor: colors.border }]}
+                            onPress={() => {
+                                setGroupModalVisible(false);
+                                setSessionForGroup(null);
+                            }}
+                        >
+                            <Text style={[styles.modalButtonText, { color: colors.text }]}>
+                                {t.common.cancel}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -367,5 +480,61 @@ const styles = StyleSheet.create({
     loginButtonText: {
         color: '#FFFFFF',
         fontWeight: '600',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        width: '85%',
+        borderRadius: 16,
+        padding: 20,
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        marginBottom: 16,
+        textAlign: 'center',
+    },
+    modalInput: {
+        padding: 14,
+        borderRadius: 10,
+        fontSize: 16,
+        marginBottom: 16,
+    },
+    modalButtons: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    modalButton: {
+        flex: 1,
+        padding: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+        marginHorizontal: 4,
+    },
+    modalButtonText: {
+        color: '#FFFFFF',
+        fontWeight: '600',
+    },
+    noGroupsText: {
+        textAlign: 'center',
+        marginBottom: 16,
+    },
+    groupOption: {
+        padding: 14,
+        borderRadius: 10,
+        marginBottom: 8,
+    },
+    groupOptionText: {
+        fontSize: 16,
+    },
+    cancelButton: {
+        padding: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+        marginTop: 8,
     },
 });

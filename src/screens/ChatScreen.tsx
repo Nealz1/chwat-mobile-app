@@ -53,6 +53,12 @@ export function ChatScreen({ route, navigation }: Props) {
                 <View style={styles.headerButtons}>
                     <TouchableOpacity
                         style={styles.headerButton}
+                        onPress={() => navigation.navigate('Help')}
+                    >
+                        <Text style={styles.headerButtonText}>❓</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.headerButton}
                         onPress={() => navigation.navigate('Groups')}
                     >
                         <Text style={styles.headerButtonText}>📁</Text>

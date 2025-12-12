@@ -6,6 +6,7 @@ import { SettingsScreen } from '../screens/SettingsScreen';
 import { SessionsScreen } from '../screens/SessionsScreen';
 import { LoginScreen } from '../screens/LoginScreen';
 import { GroupsScreen } from '../screens/GroupsScreen';
+import { HelpScreen } from '../screens/HelpScreen';
 
 export type RootStackParamList = {
     Chat: { sessionId?: number } | undefined;
@@ -13,6 +14,7 @@ export type RootStackParamList = {
     Settings: undefined;
     Login: undefined;
     Groups: undefined;
+    Help: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -46,6 +48,11 @@ export function AppNavigator() {
                     name="Groups"
                     component={GroupsScreen}
                     options={{ title: 'Grupy' }}
+                />
+                <Stack.Screen
+                    name="Help"
+                    component={HelpScreen}
+                    options={{ title: 'Pomoc' }}
                 />
                 <Stack.Screen
                     name="Settings"
