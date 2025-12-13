@@ -218,43 +218,47 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                             )}
                         </ScrollView>
 
-                        {/* Bottom: User with menu */}
+                        {/* Bottom: User with toggle menu */}
                         <View style={[styles.bottomSection, { borderTopColor: borderColor }]}>
-                            {/* Menu items */}
-                            <TouchableOpacity
-                                style={styles.menuItem}
-                                onPress={() => navigateTo('Settings')}
-                            >
-                                <Text style={styles.menuItemIcon}>←</Text>
-                                <Text style={[styles.menuItemText, { color: colors.text }]}>
-                                    {language === 'pl' ? 'Ustawienia' : 'Settings'}
-                                </Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={styles.menuItem}
-                                onPress={() => navigateTo('Help')}
-                            >
-                                <Text style={styles.menuItemIcon}>ⓘ</Text>
-                                <Text style={[styles.menuItemText, { color: colors.text }]}>
-                                    {language === 'pl' ? 'Pomoc' : 'Help'}
-                                </Text>
-                            </TouchableOpacity>
-                            {!user && (
-                                <TouchableOpacity
-                                    style={styles.menuItem}
-                                    onPress={() => navigateTo('Login')}
-                                >
-                                    <Text style={styles.menuItemIcon}>←</Text>
-                                    <Text style={[styles.menuItemText, { color: colors.text }]}>
-                                        {language === 'pl' ? 'Zaloguj się' : 'Login'}
-                                    </Text>
-                                </TouchableOpacity>
+                            {/* Dropdown menu items - only show when open */}
+                            {userMenuVisible && (
+                                <View style={[styles.dropdownMenu, { backgroundColor: isDark ? '#2d2d2d' : '#ffffff', borderColor }]}>
+                                    <TouchableOpacity
+                                        style={styles.menuItem}
+                                        onPress={() => { setUserMenuVisible(false); navigateTo('Settings'); }}
+                                    >
+                                        <Text style={styles.menuItemIcon}>←</Text>
+                                        <Text style={[styles.menuItemText, { color: colors.text }]}>
+                                            {language === 'pl' ? 'Ustawienia' : 'Settings'}
+                                        </Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={styles.menuItem}
+                                        onPress={() => { setUserMenuVisible(false); navigateTo('Help'); }}
+                                    >
+                                        <Text style={styles.menuItemIcon}>ⓘ</Text>
+                                        <Text style={[styles.menuItemText, { color: colors.text }]}>
+                                            {language === 'pl' ? 'Pomoc' : 'Help'}
+                                        </Text>
+                                    </TouchableOpacity>
+                                    {!user && (
+                                        <TouchableOpacity
+                                            style={styles.menuItem}
+                                            onPress={() => { setUserMenuVisible(false); navigateTo('Login'); }}
+                                        >
+                                            <Text style={styles.menuItemIcon}>←</Text>
+                                            <Text style={[styles.menuItemText, { color: colors.text }]}>
+                                                {language === 'pl' ? 'Zaloguj się' : 'Login'}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    )}
+                                </View>
                             )}
 
-                            {/* User info row */}
+                            {/* User row with ⋮ button */}
                             <TouchableOpacity
-                                style={[styles.userSection, { marginTop: 8 }]}
-                                onPress={() => user ? navigateTo('Settings') : navigateTo('Login')}
+                                style={styles.userSection}
+                                onPress={() => setUserMenuVisible(!userMenuVisible)}
                             >
                                 <Text style={styles.userIcon}>👤</Text>
                                 <Text style={[styles.userName, { color: user ? colors.text : colors.textSecondary }]} numberOfLines={1}>
@@ -398,5 +402,11 @@ const styles = StyleSheet.create({
     },
     menuItemText: {
         fontSize: 14,
+    },
+    dropdownMenu: {
+        borderWidth: 1,
+        borderRadius: 8,
+        padding: 8,
+        marginBottom: 8,
     },
 });
