@@ -23,9 +23,9 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 export function AppNavigator() {
     const { isDark, colors } = useTheme();
 
-    // Light gray header for dark mode, dark header for light mode
-    const headerBgColor = isDark ? '#f5f5f5' : '#1f1f1f';
-    const headerTextColor = isDark ? '#1a1a1a' : '#ffffff';
+    // Dark header for dark mode, light gray header for light mode
+    const headerBgColor = isDark ? '#1f1f1f' : '#f5f5f5';
+    const headerTextColor = isDark ? '#ffffff' : '#1a1a1a';
 
     return (
         <NavigationContainer>
