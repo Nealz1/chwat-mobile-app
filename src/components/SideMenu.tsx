@@ -12,6 +12,7 @@ import {
     Pressable,
     ScrollView,
     Alert,
+    Share,
 } from 'react-native';
 import { chatService } from '../services/chatService';
 import { authService } from '../services/authService';
@@ -177,6 +178,38 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
         }
     };
 
+    const handleExportSession = async () => {
+        if (!selectedSession) return;
+        setActionMenuVisible(false);
+
+        try {
+            // Get session messages
+            const messages = await chatService.getSessionMessages(selectedSession.id);
+
+            // Format as text
+            let content = `# ${selectedSession.title}\n`;
+            content += `${language === 'pl' ? 'Eksportowano' : 'Exported'}: ${new Date().toLocaleString()}\n\n`;
+
+            messages.forEach((msg) => {
+                const role = msg.role === 'user'
+                    ? (language === 'pl' ? 'Użytkownik' : 'User')
+                    : (language === 'pl' ? 'Asystent' : 'Assistant');
+                content += `## ${role}\n${msg.content}\n\n`;
+            });
+
+            // Use React Native Share API
+            await Share.share({
+                message: content,
+                title: selectedSession.title,
+            });
+        } catch (error) {
+            console.error('Error exporting session:', error);
+            Alert.alert(
+                language === 'pl' ? 'Błąd' : 'Error',
+                language === 'pl' ? 'Nie udało się wyeksportować rozmowy' : 'Failed to export chat'
+            );
+        }
+    };
     const filteredSessions = sessions.filter(s =>
         s.title.toLowerCase().includes(searchQuery.toLowerCase())
     );
@@ -434,6 +467,16 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                             <Text style={[styles.actionMenuIcon, { color: colors.text }]}>📁</Text>
                             <Text style={[styles.actionMenuText, { color: colors.text }]}>
                                 {language === 'pl' ? 'Przenieś do grupy' : 'Move to group'}
+                            </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.actionMenuItem}
+                            onPress={handleExportSession}
+                        >
+                            <Text style={[styles.actionMenuIcon, { color: colors.text }]}>📤</Text>
+                            <Text style={[styles.actionMenuText, { color: colors.text }]}>
+                                {language === 'pl' ? 'Eksportuj' : 'Export'}
                             </Text>
                         </TouchableOpacity>
 
