@@ -11,6 +11,7 @@ import {
     Dimensions,
     Pressable,
     ScrollView,
+    Alert,
 } from 'react-native';
 import { chatService } from '../services/chatService';
 import { authService } from '../services/authService';
@@ -34,6 +35,8 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [slideAnim] = useState(new Animated.Value(-DRAWER_WIDTH));
     const [userMenuVisible, setUserMenuVisible] = useState(false);
+    const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null);
+    const [actionMenuVisible, setActionMenuVisible] = useState(false);
 
     useEffect(() => {
         if (visible) {
@@ -82,6 +85,78 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
     const navigateTo = (screen: string) => {
         onClose();
         navigation.navigate(screen);
+    };
+
+    // Session action handlers
+    const handleSessionLongPress = (session: ChatSession) => {
+        setSelectedSession(session);
+        setActionMenuVisible(true);
+    };
+
+    const handleRenameSession = () => {
+        if (!selectedSession) return;
+        setActionMenuVisible(false);
+
+        Alert.prompt(
+            language === 'pl' ? 'Zmień nazwę' : 'Rename',
+            language === 'pl' ? 'Wprowadź nową nazwę' : 'Enter new title',
+            async (newTitle) => {
+                if (newTitle && newTitle.trim()) {
+                    await chatService.updateSessionTitle(selectedSession.id, newTitle.trim());
+                    setSessions(prev => prev.map(s =>
+                        s.id === selectedSession.id ? { ...s, title: newTitle.trim() } : s
+                    ));
+                }
+            },
+            'plain-text',
+            selectedSession.title
+        );
+    };
+
+    const handlePinSession = async () => {
+        if (!selectedSession) return;
+        setActionMenuVisible(false);
+
+        const newPinned = !selectedSession.is_pinned;
+        const success = await chatService.pinSession(selectedSession.id, newPinned);
+        if (success) {
+            setSessions(prev => prev.map(s =>
+                s.id === selectedSession.id ? { ...s, is_pinned: newPinned } : s
+            ));
+        }
+    };
+
+    const handleArchiveSession = async () => {
+        if (!selectedSession) return;
+        setActionMenuVisible(false);
+
+        const success = await chatService.archiveSession(selectedSession.id);
+        if (success) {
+            setSessions(prev => prev.filter(s => s.id !== selectedSession.id));
+        }
+    };
+
+    const handleDeleteSession = async () => {
+        if (!selectedSession) return;
+
+        Alert.alert(
+            language === 'pl' ? 'Usuń rozmowę' : 'Delete chat',
+            language === 'pl' ? 'Czy na pewno chcesz usunąć tę rozmowę?' : 'Are you sure you want to delete this chat?',
+            [
+                { text: language === 'pl' ? 'Anuluj' : 'Cancel', style: 'cancel' },
+                {
+                    text: language === 'pl' ? 'Usuń' : 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                        setActionMenuVisible(false);
+                        const success = await chatService.deleteSession(selectedSession.id);
+                        if (success) {
+                            setSessions(prev => prev.filter(s => s.id !== selectedSession.id));
+                        }
+                    }
+                }
+            ]
+        );
     };
 
     const filteredSessions = sessions.filter(s =>
@@ -168,10 +243,13 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                     {todaySessions.map(session => (
                                         <TouchableOpacity
                                             key={session.id}
-                                            style={styles.sessionItem}
+                                            style={[styles.sessionItem, session.is_pinned && styles.pinnedSession]}
                                             onPress={() => handleOpenChat(session)}
+                                            onLongPress={() => handleSessionLongPress(session)}
                                         >
-                                            <Text style={[styles.sessionIcon, { color: colors.text }]}>◇</Text>
+                                            <Text style={[styles.sessionIcon, { color: colors.text }]}>
+                                                {session.is_pinned ? '📌' : '◇'}
+                                            </Text>
                                             <Text
                                                 style={[styles.sessionTitle, { color: colors.text }]}
                                                 numberOfLines={1}
@@ -192,10 +270,13 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                     {recentSessions.slice(0, 10).map(session => (
                                         <TouchableOpacity
                                             key={session.id}
-                                            style={styles.sessionItem}
+                                            style={[styles.sessionItem, session.is_pinned && styles.pinnedSession]}
                                             onPress={() => handleOpenChat(session)}
+                                            onLongPress={() => handleSessionLongPress(session)}
                                         >
-                                            <Text style={[styles.sessionIcon, { color: colors.text }]}>◇</Text>
+                                            <Text style={[styles.sessionIcon, { color: colors.text }]}>
+                                                {session.is_pinned ? '📌' : '◇'}
+                                            </Text>
                                             <Text
                                                 style={[styles.sessionTitle, { color: colors.text }]}
                                                 numberOfLines={1}
@@ -262,6 +343,71 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                     </Pressable>
                 </Animated.View>
             </Pressable>
+
+            {/* Session Action Menu Modal */}
+            <Modal
+                visible={actionMenuVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setActionMenuVisible(false)}
+            >
+                <Pressable
+                    style={styles.actionMenuOverlay}
+                    onPress={() => setActionMenuVisible(false)}
+                >
+                    <View style={[styles.actionMenuContent, { backgroundColor: colors.surface }]}>
+                        <Text style={[styles.actionMenuTitle, { color: colors.text }]} numberOfLines={1}>
+                            {selectedSession?.title}
+                        </Text>
+
+                        {/* Rename - using Alert.prompt which works on iOS, fallback for Android */}
+                        <TouchableOpacity
+                            style={styles.actionMenuItem}
+                            onPress={handleRenameSession}
+                        >
+                            <Text style={[styles.actionMenuIcon, { color: colors.text }]}>✎</Text>
+                            <Text style={[styles.actionMenuText, { color: colors.text }]}>
+                                {language === 'pl' ? 'Zmień nazwę' : 'Rename'}
+                            </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.actionMenuItem}
+                            onPress={handlePinSession}
+                        >
+                            <Text style={[styles.actionMenuIcon, { color: colors.text }]}>
+                                {selectedSession?.is_pinned ? '📌' : '📍'}
+                            </Text>
+                            <Text style={[styles.actionMenuText, { color: colors.text }]}>
+                                {selectedSession?.is_pinned
+                                    ? (language === 'pl' ? 'Odepnij' : 'Unpin')
+                                    : (language === 'pl' ? 'Przypnij' : 'Pin')
+                                }
+                            </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.actionMenuItem}
+                            onPress={handleArchiveSession}
+                        >
+                            <Text style={[styles.actionMenuIcon, { color: colors.text }]}>📦</Text>
+                            <Text style={[styles.actionMenuText, { color: colors.text }]}>
+                                {language === 'pl' ? 'Archiwizuj' : 'Archive'}
+                            </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.actionMenuItem}
+                            onPress={handleDeleteSession}
+                        >
+                            <Text style={[styles.actionMenuIcon, { color: colors.error }]}>🗑</Text>
+                            <Text style={[styles.actionMenuText, { color: colors.error }]}>
+                                {language === 'pl' ? 'Usuń' : 'Delete'}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </Pressable>
+            </Modal>
         </Modal>
     );
 }
@@ -400,5 +546,43 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         padding: 8,
         marginBottom: 8,
+    },
+    pinnedSession: {
+        borderLeftWidth: 2,
+        borderLeftColor: '#e67e22',
+    },
+    actionMenuOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    actionMenuContent: {
+        width: '80%',
+        borderRadius: 12,
+        padding: 16,
+        maxWidth: 300,
+    },
+    actionMenuTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        marginBottom: 16,
+        textAlign: 'center',
+    },
+    actionMenuItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 12,
+        paddingHorizontal: 8,
+        borderRadius: 8,
+    },
+    actionMenuIcon: {
+        fontSize: 18,
+        marginRight: 12,
+        width: 24,
+        textAlign: 'center',
+    },
+    actionMenuText: {
+        fontSize: 16,
     },
 });
