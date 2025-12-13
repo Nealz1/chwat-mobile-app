@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
     View,
     Text,
@@ -11,7 +11,9 @@ import {
     ActivityIndicator,
     SafeAreaView,
     Keyboard,
+    Alert,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Markdown from 'react-native-markdown-display';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -148,7 +150,56 @@ export function ChatScreen({ route, navigation }: Props) {
         ]);
     }, [t]);
 
-    const renderMessage = useCallback(({ item }: { item: Message }) => (
+    const handleCopyMessage = useCallback(async (text: string) => {
+        await Clipboard.setStringAsync(text);
+        Alert.alert('✓', t.chat?.copied || 'Skopiowano do schowka');
+    }, [t]);
+
+    const handleRegenerateResponse = useCallback(async (messageIndex: number) => {
+        if (isLoading || messageIndex < 1) return;
+
+        // Get the user message before this bot response
+        const userMessage = messages[messageIndex - 1];
+        if (userMessage?.sender !== 'user') return;
+
+        setIsLoading(true);
+        // Replace bot message with loading
+        setMessages(prev => {
+            const newMessages = [...prev];
+            newMessages[messageIndex] = { sender: 'bot', text: '', isLoading: true };
+            return newMessages;
+        });
+
+        try {
+            let response: SendMessageResponse | { response: string };
+            if (user) {
+                response = await chatService.sendMessage(userMessage.text, currentSessionId);
+            } else {
+                response = await chatService.sendGuestMessage(userMessage.text);
+            }
+
+            setMessages(prev => {
+                const newMessages = [...prev];
+                newMessages[messageIndex] = {
+                    sender: 'bot',
+                    text: response.response,
+                    nodeId: 'node_id' in response ? response.node_id : undefined,
+                };
+                return newMessages;
+            });
+        } catch (error) {
+            console.error('Error regenerating:', error);
+            setMessages(prev => {
+                const newMessages = [...prev];
+                newMessages[messageIndex] = { sender: 'bot', text: t.chat.serverError };
+                return newMessages;
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    }, [isLoading, messages, user, currentSessionId, t]);
+
+    const renderMessage = useCallback(({ item, index }: { item: Message; index: number }) => (
         <View style={[
             styles.messageContainer,
             item.sender === 'user' ? styles.userMessage : styles.botMessage,
@@ -157,27 +208,47 @@ export function ChatScreen({ route, navigation }: Props) {
             {item.isLoading ? (
                 <ActivityIndicator color={colors.text} size="small" />
             ) : (
-                <Markdown style={{
-                    body: {
-                        color: item.sender === 'user' ? '#FFFFFF' : colors.text,
-                        fontSize: 16,
-                    },
-                    code_inline: {
-                        backgroundColor: isDark ? '#2D2D2D' : '#F0F0F0',
-                        borderRadius: 4,
-                        paddingHorizontal: 4,
-                    },
-                    code_block: {
-                        backgroundColor: isDark ? '#1E1E1E' : '#F5F5F5',
-                        borderRadius: 8,
-                        padding: 12,
-                    },
-                }}>
-                    {item.text}
-                </Markdown>
+                <>
+                    <Markdown style={{
+                        body: {
+                            color: item.sender === 'user' ? '#FFFFFF' : colors.text,
+                            fontSize: 16,
+                        },
+                        code_inline: {
+                            backgroundColor: isDark ? '#2D2D2D' : '#F0F0F0',
+                            borderRadius: 4,
+                            paddingHorizontal: 4,
+                        },
+                        code_block: {
+                            backgroundColor: isDark ? '#1E1E1E' : '#F5F5F5',
+                            borderRadius: 8,
+                            padding: 12,
+                        },
+                    }}>
+                        {item.text}
+                    </Markdown>
+                    {/* Action buttons */}
+                    <View style={styles.messageActions}>
+                        <TouchableOpacity
+                            style={styles.actionButton}
+                            onPress={() => handleCopyMessage(item.text)}
+                        >
+                            <Text style={[styles.actionIcon, { color: item.sender === 'user' ? '#FFFFFF99' : colors.textSecondary }]}>📋</Text>
+                        </TouchableOpacity>
+                        {item.sender === 'bot' && index > 0 && (
+                            <TouchableOpacity
+                                style={styles.actionButton}
+                                onPress={() => handleRegenerateResponse(index)}
+                                disabled={isLoading}
+                            >
+                                <Text style={[styles.actionIcon, { color: colors.textSecondary }]}>🔄</Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                </>
             )}
         </View>
-    ), [colors, isDark]);
+    ), [colors, isDark, handleCopyMessage, handleRegenerateResponse, isLoading]);
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -304,5 +375,17 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontWeight: '600',
         fontSize: 16,
+    },
+    messageActions: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        marginTop: 8,
+        gap: 8,
+    },
+    actionButton: {
+        padding: 4,
+    },
+    actionIcon: {
+        fontSize: 14,
     },
 });

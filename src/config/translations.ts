@@ -20,6 +20,8 @@ export const translations = {
             placeholder: "Message WAT Assistant...",
             serverError: "❌ Server error!",
             newChat: "New chat",
+            copied: "Copied to clipboard",
+            regenerate: "Regenerate response",
         },
         settings: {
             title: "Settings",
@@ -87,6 +89,8 @@ export const translations = {
             placeholder: "Wiadomość do Asystenta WAT...",
             serverError: "❌ Błąd serwera!",
             newChat: "Nowy czat",
+            copied: "Skopiowano do schowka",
+            regenerate: "Wygeneruj ponownie",
         },
         settings: {
             title: "Ustawienia",
