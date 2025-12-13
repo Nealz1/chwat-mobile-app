@@ -159,16 +159,6 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                 </Text>
                             </TouchableOpacity>
 
-                            {/* Section: GRUPY */}
-                            <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
-                                GRUPY
-                            </Text>
-                            <TouchableOpacity style={styles.sessionItem} onPress={() => navigateTo('Groups')}>
-                                <Text style={[styles.sessionIcon, { color: colors.text }]}>▤</Text>
-                                <Text style={[styles.sessionTitle, { color: colors.text }]}>g1</Text>
-                                <Text style={styles.chevron}>›</Text>
-                            </TouchableOpacity>
-
                             {/* Section: DZIŚ */}
                             {todaySessions.length > 0 && (
                                 <>
