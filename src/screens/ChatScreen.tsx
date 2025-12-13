@@ -50,6 +50,8 @@ export function ChatScreen({ route, navigation }: Props) {
     const [attachedFile, setAttachedFile] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
     const [isRecording, setIsRecording] = useState(false);
     const recordingRef = useRef<Audio.Recording | null>(null);
+    const [explainModalVisible, setExplainModalVisible] = useState(false);
+    const [explainText, setExplainText] = useState('');
 
     useEffect(() => {
         loadUser();
@@ -375,6 +377,21 @@ export function ChatScreen({ route, navigation }: Props) {
         });
     }, [language]);
 
+    // Explain Decision - find the user query that triggered this bot response
+    const handleExplain = useCallback((botMsgIndex: number) => {
+        // Find the preceding user message
+        for (let i = botMsgIndex - 1; i >= 0; i--) {
+            if (messages[i].sender === 'user') {
+                setExplainText(messages[i].text);
+                setExplainModalVisible(true);
+                return;
+            }
+        }
+        // No user message found
+        setExplainText(language === 'pl' ? 'Brak poprzedniego zapytania użytkownika' : 'No previous user query found');
+        setExplainModalVisible(true);
+    }, [messages, language]);
+
     const renderMessage = useCallback(({ item, index }: { item: Message; index: number }) => (
         <View style={[
             styles.messageContainer,
@@ -435,6 +452,14 @@ export function ChatScreen({ route, navigation }: Props) {
                                 onPress={() => handleSpeak(item.text)}
                             >
                                 <Text style={[styles.actionIcon, { color: colors.textSecondary }]}>◀))</Text>
+                            </TouchableOpacity>
+                        )}
+                        {item.sender === 'bot' && index > 0 && (
+                            <TouchableOpacity
+                                style={styles.actionButton}
+                                onPress={() => handleExplain(index)}
+                            >
+                                <Text style={[styles.actionIcon, { color: colors.textSecondary }]}>🔍</Text>
                             </TouchableOpacity>
                         )}
                         {item.sender === 'bot' && item.nodeId && user && (
@@ -582,6 +607,34 @@ export function ChatScreen({ route, navigation }: Props) {
                                 <Text style={{ color: '#FFFFFF' }}>{language === 'pl' ? 'Zapisz i wyślij' : 'Save & Send'}</Text>
                             </TouchableOpacity>
                         </View>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Explain Decision Modal */}
+            <Modal
+                visible={explainModalVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setExplainModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+                        <Text style={[styles.modalTitle, { color: colors.text }]}>
+                            {language === 'pl' ? 'Wyjaśnienie decyzji' : 'Decision Explanation'}
+                        </Text>
+                        <Text style={[styles.explainLabel, { color: colors.textSecondary }]}>
+                            {language === 'pl' ? 'Odpowiedź na zapytanie:' : 'Response to query:'}
+                        </Text>
+                        <Text style={[styles.explainText, { color: colors.text, backgroundColor: colors.background }]}>
+                            {explainText}
+                        </Text>
+                        <TouchableOpacity
+                            style={[styles.modalButton, { backgroundColor: colors.primary, marginTop: 16 }]}
+                            onPress={() => setExplainModalVisible(false)}
+                        >
+                            <Text style={{ color: '#FFFFFF' }}>{language === 'pl' ? 'Zamknij' : 'Close'}</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
             </Modal>
@@ -736,5 +789,15 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         paddingHorizontal: 16,
         borderRadius: 8,
+    },
+    explainLabel: {
+        fontSize: 14,
+        marginBottom: 8,
+    },
+    explainText: {
+        fontSize: 16,
+        padding: 12,
+        borderRadius: 8,
+        lineHeight: 22,
     },
 });
