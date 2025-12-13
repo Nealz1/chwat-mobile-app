@@ -33,16 +33,16 @@ const lightColors: ThemeColors = {
 
 const darkColors: ThemeColors = {
     primary: '#e67e22', // Orange accent like web
-    background: '#1a1a1a',
-    surface: '#252525',
-    surfaceAlt: '#2d2d2d',
-    sidebar: '#1a1a1a',
+    background: '#242424', // --bg-primary from web
+    surface: '#2d2d2d',
+    surfaceAlt: '#353535',
+    sidebar: '#242424',
     text: '#ffffff',
     textSecondary: '#888888',
     border: '#3d3d3d',
     error: '#e74c3c',
     success: '#27ae60',
-    header: '#1f1f1f',
+    header: '#242424',
 };
 
 interface ThemeContextType {
