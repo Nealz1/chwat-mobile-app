@@ -12,6 +12,7 @@ import {
     SafeAreaView,
     Keyboard,
     Alert,
+    Modal,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -29,7 +30,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
 
 export function ChatScreen({ route, navigation }: Props) {
     const { colors, isDark } = useTheme();
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const [messages, setMessages] = useState<Message[]>([
         { sender: 'bot', text: t.chat.welcomeMessage }
     ]);
@@ -41,6 +42,8 @@ export function ChatScreen({ route, navigation }: Props) {
     );
     const [menuVisible, setMenuVisible] = useState(false);
     const [keyboardHeight, setKeyboardHeight] = useState(0);
+    const [editingIndex, setEditingIndex] = useState<number | null>(null);
+    const [editText, setEditText] = useState('');
 
     useEffect(() => {
         loadUser();
@@ -199,6 +202,66 @@ export function ChatScreen({ route, navigation }: Props) {
         }
     }, [isLoading, messages, user, currentSessionId, t]);
 
+    const handleStartEdit = useCallback((index: number, text: string) => {
+        setEditingIndex(index);
+        setEditText(text);
+    }, []);
+
+    const handleCancelEdit = useCallback(() => {
+        setEditingIndex(null);
+        setEditText('');
+    }, []);
+
+    const handleSaveEdit = useCallback(async () => {
+        if (editingIndex === null || !editText.trim() || isLoading) return;
+
+        const editedUserMessage = editText.trim();
+        handleCancelEdit();
+        setIsLoading(true);
+
+        // Update user message and replace following bot response with loading
+        setMessages(prev => {
+            const newMessages = [...prev];
+            newMessages[editingIndex] = { sender: 'user', text: editedUserMessage };
+            if (editingIndex + 1 < newMessages.length) {
+                newMessages[editingIndex + 1] = { sender: 'bot', text: '', isLoading: true };
+            }
+            return newMessages;
+        });
+
+        try {
+            let response: SendMessageResponse | { response: string };
+            if (user) {
+                response = await chatService.sendMessage(editedUserMessage, currentSessionId);
+            } else {
+                response = await chatService.sendGuestMessage(editedUserMessage);
+            }
+
+            setMessages(prev => {
+                const newMessages = [...prev];
+                if (editingIndex + 1 < newMessages.length) {
+                    newMessages[editingIndex + 1] = {
+                        sender: 'bot',
+                        text: response.response,
+                        nodeId: 'node_id' in response ? response.node_id : undefined,
+                    };
+                }
+                return newMessages;
+            });
+        } catch (error) {
+            console.error('Error after edit:', error);
+            setMessages(prev => {
+                const newMessages = [...prev];
+                if (editingIndex + 1 < newMessages.length) {
+                    newMessages[editingIndex + 1] = { sender: 'bot', text: t.chat.serverError };
+                }
+                return newMessages;
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    }, [editingIndex, editText, isLoading, user, currentSessionId, t, handleCancelEdit]);
+
     const renderMessage = useCallback(({ item, index }: { item: Message; index: number }) => (
         <View style={[
             styles.messageContainer,
@@ -235,6 +298,15 @@ export function ChatScreen({ route, navigation }: Props) {
                         >
                             <Text style={[styles.actionIcon, { color: item.sender === 'user' ? '#FFFFFF99' : colors.textSecondary }]}>📋</Text>
                         </TouchableOpacity>
+                        {item.sender === 'user' && (
+                            <TouchableOpacity
+                                style={styles.actionButton}
+                                onPress={() => handleStartEdit(index, item.text)}
+                                disabled={isLoading}
+                            >
+                                <Text style={[styles.actionIcon, { color: '#FFFFFF99' }]}>✏️</Text>
+                            </TouchableOpacity>
+                        )}
                         {item.sender === 'bot' && index > 0 && (
                             <TouchableOpacity
                                 style={styles.actionButton}
@@ -248,7 +320,7 @@ export function ChatScreen({ route, navigation }: Props) {
                 </>
             )}
         </View>
-    ), [colors, isDark, handleCopyMessage, handleRegenerateResponse, isLoading]);
+    ), [colors, isDark, handleCopyMessage, handleRegenerateResponse, handleStartEdit, isLoading]);
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -303,6 +375,44 @@ export function ChatScreen({ route, navigation }: Props) {
                     </TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>
+
+            {/* Edit Message Modal */}
+            <Modal
+                visible={editingIndex !== null}
+                transparent
+                animationType="fade"
+                onRequestClose={handleCancelEdit}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+                        <Text style={[styles.modalTitle, { color: colors.text }]}>
+                            {language === 'pl' ? 'Edytuj wiadomość' : 'Edit message'}
+                        </Text>
+                        <TextInput
+                            style={[styles.editInput, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border }]}
+                            value={editText}
+                            onChangeText={setEditText}
+                            multiline
+                            autoFocus
+                        />
+                        <View style={styles.modalButtons}>
+                            <TouchableOpacity
+                                style={[styles.modalButton, { backgroundColor: colors.border }]}
+                                onPress={handleCancelEdit}
+                            >
+                                <Text style={{ color: colors.text }}>{language === 'pl' ? 'Anuluj' : 'Cancel'}</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.modalButton, { backgroundColor: colors.primary }]}
+                                onPress={handleSaveEdit}
+                                disabled={!editText.trim() || isLoading}
+                            >
+                                <Text style={{ color: '#FFFFFF' }}>{language === 'pl' ? 'Zapisz i wyślij' : 'Save & Send'}</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -387,5 +497,41 @@ const styles = StyleSheet.create({
     },
     actionIcon: {
         fontSize: 14,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    modalContent: {
+        width: '100%',
+        borderRadius: 12,
+        padding: 20,
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        marginBottom: 16,
+    },
+    editInput: {
+        borderWidth: 1,
+        borderRadius: 8,
+        padding: 12,
+        minHeight: 100,
+        textAlignVertical: 'top',
+        fontSize: 16,
+        marginBottom: 16,
+    },
+    modalButtons: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        gap: 12,
+    },
+    modalButton: {
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+        borderRadius: 8,
     },
 });
