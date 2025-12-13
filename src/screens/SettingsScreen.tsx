@@ -4,12 +4,13 @@ import {
     Text,
     TouchableOpacity,
     StyleSheet,
-    SafeAreaView,
+
     Switch,
     ScrollView,
     Alert,
     TextInput,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Picker } from '@react-native-picker/picker';
 import { RootStackParamList } from '../navigation/AppNavigator';

@@ -9,11 +9,12 @@ import {
     KeyboardAvoidingView,
     Platform,
     ActivityIndicator,
-    SafeAreaView,
+
     Keyboard,
     Alert,
     Modal,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import * as Speech from 'expo-speech';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
