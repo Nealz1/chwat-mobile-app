@@ -218,54 +218,56 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                             )}
                         </ScrollView>
 
-                        {/* Bottom: User with toggle menu */}
+                        {/* Bottom: Menu items always visible like USOS */}
                         <View style={[styles.bottomSection, { borderTopColor: borderColor }]}>
-                            {/* Dropdown menu items - only show when open */}
-                            {userMenuVisible && (
-                                <View style={[styles.dropdownMenu, { backgroundColor: isDark ? '#2d2d2d' : '#ffffff', borderColor }]}>
-                                    <TouchableOpacity
-                                        style={styles.menuItem}
-                                        onPress={() => { setUserMenuVisible(false); navigateTo('Settings'); }}
-                                    >
-                                        <Text style={[styles.menuItemIcon, { color: colors.textSecondary }]}>⚙</Text>
-                                        <Text style={[styles.menuItemText, { color: colors.text }]}>
-                                            {language === 'pl' ? 'Ustawienia' : 'Settings'}
-                                        </Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        style={styles.menuItem}
-                                        onPress={() => { setUserMenuVisible(false); navigateTo('Help'); }}
-                                    >
-                                        <Text style={[styles.menuItemIcon, { color: colors.textSecondary }]}>?</Text>
-                                        <Text style={[styles.menuItemText, { color: colors.text }]}>
-                                            {language === 'pl' ? 'Pomoc' : 'Help'}
-                                        </Text>
-                                    </TouchableOpacity>
-                                    {!user && (
-                                        <TouchableOpacity
-                                            style={styles.menuItem}
-                                            onPress={() => { setUserMenuVisible(false); navigateTo('Login'); }}
-                                        >
-                                            <Text style={[styles.menuItemIcon, { color: colors.textSecondary }]}>→</Text>
-                                            <Text style={[styles.menuItemText, { color: colors.text }]}>
-                                                {language === 'pl' ? 'Zaloguj się' : 'Login'}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    )}
-                                </View>
-                            )}
-
-                            {/* User row with ⋮ button */}
+                            {/* Settings */}
                             <TouchableOpacity
-                                style={styles.userSection}
-                                onPress={() => setUserMenuVisible(!userMenuVisible)}
+                                style={styles.menuItem}
+                                onPress={() => navigateTo('Settings')}
                             >
-                                <Text style={styles.userIcon}>👤</Text>
-                                <Text style={[styles.userName, { color: user ? colors.text : colors.textSecondary }]} numberOfLines={1}>
-                                    {user ? `${user.first_name} ${user.last_name}` : (language === 'pl' ? 'Gość' : 'Guest')}
+                                <Text style={[styles.menuItemIcon, { color: colors.text }]}>⚙</Text>
+                                <Text style={[styles.menuItemText, { color: colors.text }]}>
+                                    {language === 'pl' ? 'Ustawienia' : 'Settings'}
                                 </Text>
-                                <Text style={styles.menuDots}>⋮</Text>
                             </TouchableOpacity>
+
+                            {/* Help / About */}
+                            <TouchableOpacity
+                                style={styles.menuItem}
+                                onPress={() => navigateTo('Help')}
+                            >
+                                <Text style={[styles.menuItemIcon, { color: colors.text }]}>ⓘ</Text>
+                                <Text style={[styles.menuItemText, { color: colors.text }]}>
+                                    {language === 'pl' ? 'O aplikacji' : 'About'}
+                                </Text>
+                            </TouchableOpacity>
+
+                            {/* Login/Logout */}
+                            {user ? (
+                                <TouchableOpacity
+                                    style={styles.menuItem}
+                                    onPress={async () => {
+                                        await authService.logout();
+                                        setUser(null);
+                                        onClose();
+                                    }}
+                                >
+                                    <Text style={[styles.menuItemIcon, { color: colors.text }]}>⇥</Text>
+                                    <Text style={[styles.menuItemText, { color: colors.text }]}>
+                                        {language === 'pl' ? 'Wyloguj' : 'Logout'}
+                                    </Text>
+                                </TouchableOpacity>
+                            ) : (
+                                <TouchableOpacity
+                                    style={styles.menuItem}
+                                    onPress={() => navigateTo('Login')}
+                                >
+                                    <Text style={[styles.menuItemIcon, { color: colors.text }]}>⇤</Text>
+                                    <Text style={[styles.menuItemText, { color: colors.text }]}>
+                                        {language === 'pl' ? 'Zaloguj się' : 'Login'}
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
                         </View>
                     </Pressable>
                 </Animated.View>
