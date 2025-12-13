@@ -110,6 +110,24 @@ class AuthService {
             ? { 'Authorization': `Bearer ${token}` }
             : {};
     }
+
+    async submitFeedback(nodeId: number, feedback: string): Promise<void> {
+        const token = await this.getToken();
+        if (!token) return;
+
+        try {
+            await fetch(`${API_BASE_URL}/feedback`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ node_id: nodeId, feedback }),
+            });
+        } catch (error) {
+            console.error('Error submitting feedback:', error);
+        }
+    }
 }
 
 export const authService = new AuthService();

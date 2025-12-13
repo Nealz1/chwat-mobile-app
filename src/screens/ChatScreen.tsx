@@ -262,6 +262,21 @@ export function ChatScreen({ route, navigation }: Props) {
         }
     }, [editingIndex, editText, isLoading, user, currentSessionId, t, handleCancelEdit]);
 
+    const handleFeedback = useCallback(async (nodeId: number, feedbackType: string) => {
+        if (!user) return;
+
+        // Find the message with this nodeId and toggle feedback
+        setMessages(prev => prev.map(msg => {
+            if (msg.nodeId === nodeId) {
+                const newFeedback = msg.feedback === feedbackType ? 'neutral' : feedbackType;
+                // Submit to server
+                authService.submitFeedback(nodeId, newFeedback);
+                return { ...msg, feedback: newFeedback };
+            }
+            return msg;
+        }));
+    }, [user]);
+
     const renderMessage = useCallback(({ item, index }: { item: Message; index: number }) => (
         <View style={[
             styles.messageContainer,
@@ -316,11 +331,27 @@ export function ChatScreen({ route, navigation }: Props) {
                                 <Text style={[styles.actionIcon, { color: colors.textSecondary }]}>🔄</Text>
                             </TouchableOpacity>
                         )}
+                        {item.sender === 'bot' && item.nodeId && user && (
+                            <>
+                                <TouchableOpacity
+                                    style={styles.actionButton}
+                                    onPress={() => handleFeedback(item.nodeId!, 'positive')}
+                                >
+                                    <Text style={[styles.actionIcon, { color: item.feedback === 'positive' ? colors.primary : colors.textSecondary }]}>👍</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={styles.actionButton}
+                                    onPress={() => handleFeedback(item.nodeId!, 'negative')}
+                                >
+                                    <Text style={[styles.actionIcon, { color: item.feedback === 'negative' ? '#FF4444' : colors.textSecondary }]}>👎</Text>
+                                </TouchableOpacity>
+                            </>
+                        )}
                     </View>
                 </>
             )}
         </View>
-    ), [colors, isDark, handleCopyMessage, handleRegenerateResponse, handleStartEdit, isLoading]);
+    ), [colors, isDark, handleCopyMessage, handleRegenerateResponse, handleStartEdit, handleFeedback, isLoading, user]);
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
