@@ -18,7 +18,7 @@ import { chatService } from '../services/chatService';
 import { authService } from '../services/authService';
 import { groupsService, Group } from '../services/groupsService';
 import type { ChatSession, User } from '../types';
-import { useTheme } from '../hooks/useTheme';
+import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Sessions'>;

@@ -15,7 +15,7 @@ import {
 import { chatService } from '../services/chatService';
 import { authService } from '../services/authService';
 import type { ChatSession, User } from '../types';
-import { useTheme } from '../hooks/useTheme';
+import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const DRAWER_WIDTH = Dimensions.get('window').width * 0.85;

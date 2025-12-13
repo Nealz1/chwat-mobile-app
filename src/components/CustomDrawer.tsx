@@ -13,7 +13,7 @@ import { DrawerContentComponentProps } from '@react-navigation/drawer';
 import { chatService } from '../services/chatService';
 import { authService } from '../services/authService';
 import type { ChatSession, User } from '../types';
-import { useTheme } from '../hooks/useTheme';
+import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const watLogo = require('../../assets/wat_logo_light.png');

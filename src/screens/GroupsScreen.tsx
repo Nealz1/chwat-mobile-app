@@ -16,7 +16,7 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 import { groupsService, Group } from '../services/groupsService';
 import { authService } from '../services/authService';
 import type { User, ChatSession } from '../types';
-import { useTheme } from '../hooks/useTheme';
+import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Groups'>;

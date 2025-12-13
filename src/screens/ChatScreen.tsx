@@ -22,7 +22,7 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 import { chatService, SendMessageResponse } from '../services/chatService';
 import { authService } from '../services/authService';
 import type { Message, User } from '../types';
-import { useTheme } from '../hooks/useTheme';
+import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { BackgroundLogo } from '../components/BackgroundLogo';
 import { SideMenu } from '../components/SideMenu';

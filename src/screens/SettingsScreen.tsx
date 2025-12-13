@@ -15,7 +15,7 @@ import { Picker } from '@react-native-picker/picker';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { authService } from '../services/authService';
 import type { User } from '../types';
-import { useTheme } from '../hooks/useTheme';
+import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 

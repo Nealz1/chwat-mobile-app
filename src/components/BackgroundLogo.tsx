@@ -1,6 +1,6 @@
 import React from 'react';
 import { Image, StyleSheet, View, Dimensions } from 'react-native';
-import { useTheme } from '../hooks/useTheme';
+import { useTheme } from '../contexts/ThemeContext';
 
 const watLogoDark = require('../../assets/wat_logo_dark.png');
 const watLogoLight = require('../../assets/wat_logo_light.png');
