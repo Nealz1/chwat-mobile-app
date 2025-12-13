@@ -227,7 +227,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                         style={styles.menuItem}
                                         onPress={() => { setUserMenuVisible(false); navigateTo('Settings'); }}
                                     >
-                                        <Text style={styles.menuItemIcon}>←</Text>
+                                        <Text style={[styles.menuItemIcon, { color: colors.textSecondary }]}>⚙</Text>
                                         <Text style={[styles.menuItemText, { color: colors.text }]}>
                                             {language === 'pl' ? 'Ustawienia' : 'Settings'}
                                         </Text>
@@ -236,7 +236,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                         style={styles.menuItem}
                                         onPress={() => { setUserMenuVisible(false); navigateTo('Help'); }}
                                     >
-                                        <Text style={styles.menuItemIcon}>ⓘ</Text>
+                                        <Text style={[styles.menuItemIcon, { color: colors.textSecondary }]}>?</Text>
                                         <Text style={[styles.menuItemText, { color: colors.text }]}>
                                             {language === 'pl' ? 'Pomoc' : 'Help'}
                                         </Text>
@@ -246,7 +246,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                             style={styles.menuItem}
                                             onPress={() => { setUserMenuVisible(false); navigateTo('Login'); }}
                                         >
-                                            <Text style={styles.menuItemIcon}>←</Text>
+                                            <Text style={[styles.menuItemIcon, { color: colors.textSecondary }]}>→</Text>
                                             <Text style={[styles.menuItemText, { color: colors.text }]}>
                                                 {language === 'pl' ? 'Zaloguj się' : 'Login'}
                                             </Text>
