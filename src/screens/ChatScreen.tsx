@@ -80,11 +80,11 @@ export function ChatScreen({ route, navigation }: Props) {
                     style={styles.menuButton}
                     onPress={() => setMenuVisible(true)}
                 >
-                    <Text style={styles.menuButtonText}>☰</Text>
+                    <Text style={[styles.menuButtonText, { color: isDark ? '#ffffff' : '#1a1a1a' }]}>☰</Text>
                 </TouchableOpacity>
             ),
         });
-    }, [navigation]);
+    }, [navigation, isDark]);
 
     const loadUser = async () => {
         const currentUser = await authService.getCurrentUser();
