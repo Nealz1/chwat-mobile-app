@@ -7,6 +7,7 @@ import { SessionsScreen } from '../screens/SessionsScreen';
 import { LoginScreen } from '../screens/LoginScreen';
 import { GroupsScreen } from '../screens/GroupsScreen';
 import { HelpScreen } from '../screens/HelpScreen';
+import { ArchivesScreen } from '../screens/ArchivesScreen';
 import { useTheme } from '../contexts/ThemeContext';
 
 export type RootStackParamList = {
@@ -16,6 +17,7 @@ export type RootStackParamList = {
     Login: undefined;
     Groups: undefined;
     Help: undefined;
+    Archives: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -60,6 +62,11 @@ export function AppNavigator() {
                     name="Help"
                     component={HelpScreen}
                     options={{ title: 'Pomoc' }}
+                />
+                <Stack.Screen
+                    name="Archives"
+                    component={ArchivesScreen}
+                    options={{ title: 'Archiwum' }}
                 />
                 <Stack.Screen
                     name="Settings"

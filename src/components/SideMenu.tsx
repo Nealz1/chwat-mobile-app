@@ -302,6 +302,19 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                 </Text>
                             </TouchableOpacity>
 
+                            {/* Archives - only for logged in users */}
+                            {user && (
+                                <TouchableOpacity
+                                    style={styles.menuItem}
+                                    onPress={() => navigateTo('Archives')}
+                                >
+                                    <Text style={[styles.menuItemIcon, { color: colors.text }]}>📦</Text>
+                                    <Text style={[styles.menuItemText, { color: colors.text }]}>
+                                        {language === 'pl' ? 'Archiwum' : 'Archives'}
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
+
                             {/* Help / About */}
                             <TouchableOpacity
                                 style={styles.menuItem}
