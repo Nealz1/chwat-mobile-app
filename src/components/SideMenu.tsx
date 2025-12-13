@@ -121,7 +121,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                     <Pressable style={styles.drawerContent}>
                         {/* Header */}
                         <View style={styles.header}>
-                            <Text style={styles.headerIcon}>🏛️</Text>
+                            <Text style={[styles.headerIcon, { color: colors.text }]}>⌂</Text>
                             <Text style={[styles.headerTitle, { color: colors.text }]}>HELPDesk</Text>
                         </View>
 
@@ -138,7 +138,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
 
                             {/* Search */}
                             <View style={[styles.searchContainer, { borderColor }]}>
-                                <Text style={styles.searchIcon}>🔍</Text>
+                                <Text style={[styles.searchIcon, { color: colors.textSecondary }]}>○</Text>
                                 <TextInput
                                     style={[styles.searchInput, { color: colors.text }]}
                                     placeholder={language === 'pl' ? 'Szukaj rozmów' : 'Search chats'}
@@ -153,7 +153,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                 style={[styles.outlinedButton, { borderColor }]}
                                 onPress={() => navigateTo('Groups')}
                             >
-                                <Text style={styles.buttonIcon}>📁</Text>
+                                <Text style={[styles.buttonIcon, { color: colors.text }]}>▤</Text>
                                 <Text style={[styles.outlinedButtonText, { color: colors.text }]}>
                                     {language === 'pl' ? 'Grupy' : 'Groups'}
                                 </Text>
@@ -164,7 +164,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                 GRUPY
                             </Text>
                             <TouchableOpacity style={styles.sessionItem} onPress={() => navigateTo('Groups')}>
-                                <Text style={styles.sessionIcon}>📁</Text>
+                                <Text style={[styles.sessionIcon, { color: colors.text }]}>▤</Text>
                                 <Text style={[styles.sessionTitle, { color: colors.text }]}>g1</Text>
                                 <Text style={styles.chevron}>›</Text>
                             </TouchableOpacity>
@@ -181,7 +181,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                             style={styles.sessionItem}
                                             onPress={() => handleOpenChat(session)}
                                         >
-                                            <Text style={styles.sessionIcon}>💬</Text>
+                                            <Text style={[styles.sessionIcon, { color: colors.text }]}>◇</Text>
                                             <Text
                                                 style={[styles.sessionTitle, { color: colors.text }]}
                                                 numberOfLines={1}
@@ -205,7 +205,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                             style={styles.sessionItem}
                                             onPress={() => handleOpenChat(session)}
                                         >
-                                            <Text style={styles.sessionIcon}>💬</Text>
+                                            <Text style={[styles.sessionIcon, { color: colors.text }]}>◇</Text>
                                             <Text
                                                 style={[styles.sessionTitle, { color: colors.text }]}
                                                 numberOfLines={1}
