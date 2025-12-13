@@ -15,6 +15,7 @@ import {
     Modal,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
+import * as Speech from 'expo-speech';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Markdown from 'react-native-markdown-display';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -277,6 +278,21 @@ export function ChatScreen({ route, navigation }: Props) {
         }));
     }, [user]);
 
+    const handleSpeak = useCallback((text: string) => {
+        // Remove markdown formatting for cleaner TTS
+        const cleanText = text
+            .replace(/\*\*(.*?)\*\*/g, '$1')  // Bold
+            .replace(/\*(.*?)\*/g, '$1')      // Italic
+            .replace(/`(.*?)`/g, '$1')        // Code
+            .replace(/#{1,6}\s/g, '')         // Headers
+            .replace(/\[(.*?)\]\(.*?\)/g, '$1'); // Links
+
+        Speech.speak(cleanText, {
+            language: language === 'pl' ? 'pl-PL' : 'en-US',
+            rate: 0.9,
+        });
+    }, [language]);
+
     const renderMessage = useCallback(({ item, index }: { item: Message; index: number }) => (
         <View style={[
             styles.messageContainer,
@@ -331,6 +347,14 @@ export function ChatScreen({ route, navigation }: Props) {
                                 <Text style={[styles.actionIcon, { color: colors.textSecondary }]}>🔄</Text>
                             </TouchableOpacity>
                         )}
+                        {item.sender === 'bot' && (
+                            <TouchableOpacity
+                                style={styles.actionButton}
+                                onPress={() => handleSpeak(item.text)}
+                            >
+                                <Text style={[styles.actionIcon, { color: colors.textSecondary }]}>🔊</Text>
+                            </TouchableOpacity>
+                        )}
                         {item.sender === 'bot' && item.nodeId && user && (
                             <>
                                 <TouchableOpacity
@@ -351,7 +375,7 @@ export function ChatScreen({ route, navigation }: Props) {
                 </>
             )}
         </View>
-    ), [colors, isDark, handleCopyMessage, handleRegenerateResponse, handleStartEdit, handleFeedback, isLoading, user]);
+    ), [colors, isDark, handleCopyMessage, handleRegenerateResponse, handleStartEdit, handleFeedback, handleSpeak, isLoading, user]);
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
