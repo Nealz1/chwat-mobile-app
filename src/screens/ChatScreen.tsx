@@ -327,7 +327,7 @@ export function ChatScreen({ route, navigation }: Props) {
                             style={styles.actionButton}
                             onPress={() => handleCopyMessage(item.text)}
                         >
-                            <Text style={[styles.actionIcon, { color: item.sender === 'user' ? '#FFFFFF99' : colors.textSecondary }]}>📋</Text>
+                            <Text style={[styles.actionIcon, { color: item.sender === 'user' ? '#FFFFFF99' : colors.textSecondary }]}>⎘</Text>
                         </TouchableOpacity>
                         {item.sender === 'user' && (
                             <TouchableOpacity
@@ -335,7 +335,7 @@ export function ChatScreen({ route, navigation }: Props) {
                                 onPress={() => handleStartEdit(index, item.text)}
                                 disabled={isLoading}
                             >
-                                <Text style={[styles.actionIcon, { color: '#FFFFFF99' }]}>✏️</Text>
+                                <Text style={[styles.actionIcon, { color: '#FFFFFF99' }]}>✎</Text>
                             </TouchableOpacity>
                         )}
                         {item.sender === 'bot' && index > 0 && (
@@ -344,7 +344,7 @@ export function ChatScreen({ route, navigation }: Props) {
                                 onPress={() => handleRegenerateResponse(index)}
                                 disabled={isLoading}
                             >
-                                <Text style={[styles.actionIcon, { color: colors.textSecondary }]}>🔄</Text>
+                                <Text style={[styles.actionIcon, { color: colors.textSecondary }]}>↻</Text>
                             </TouchableOpacity>
                         )}
                         {item.sender === 'bot' && (
@@ -352,7 +352,7 @@ export function ChatScreen({ route, navigation }: Props) {
                                 style={styles.actionButton}
                                 onPress={() => handleSpeak(item.text)}
                             >
-                                <Text style={[styles.actionIcon, { color: colors.textSecondary }]}>🔊</Text>
+                                <Text style={[styles.actionIcon, { color: colors.textSecondary }]}>◀))</Text>
                             </TouchableOpacity>
                         )}
                         {item.sender === 'bot' && item.nodeId && user && (
@@ -361,13 +361,13 @@ export function ChatScreen({ route, navigation }: Props) {
                                     style={styles.actionButton}
                                     onPress={() => handleFeedback(item.nodeId!, 'positive')}
                                 >
-                                    <Text style={[styles.actionIcon, { color: item.feedback === 'positive' ? colors.primary : colors.textSecondary }]}>👍</Text>
+                                    <Text style={[styles.actionIcon, { color: item.feedback === 'positive' ? colors.primary : colors.textSecondary }]}>↑</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
                                     style={styles.actionButton}
                                     onPress={() => handleFeedback(item.nodeId!, 'negative')}
                                 >
-                                    <Text style={[styles.actionIcon, { color: item.feedback === 'negative' ? '#FF4444' : colors.textSecondary }]}>👎</Text>
+                                    <Text style={[styles.actionIcon, { color: item.feedback === 'negative' ? '#FF4444' : colors.textSecondary }]}>↓</Text>
                                 </TouchableOpacity>
                             </>
                         )}
