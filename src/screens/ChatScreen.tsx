@@ -9,7 +9,6 @@ import {
     KeyboardAvoidingView,
     Platform,
     ActivityIndicator,
-
     Keyboard,
     Alert,
     Modal,
@@ -17,6 +16,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import * as Speech from 'expo-speech';
+import * as DocumentPicker from 'expo-document-picker';
+import { Audio } from 'expo-av';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Markdown from 'react-native-markdown-display';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -46,6 +47,9 @@ export function ChatScreen({ route, navigation }: Props) {
     const [keyboardHeight, setKeyboardHeight] = useState(0);
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [editText, setEditText] = useState('');
+    const [attachedFile, setAttachedFile] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
+    const [isRecording, setIsRecording] = useState(false);
+    const recordingRef = useRef<Audio.Recording | null>(null);
 
     useEffect(() => {
         loadUser();
@@ -279,6 +283,83 @@ export function ChatScreen({ route, navigation }: Props) {
         }));
     }, [user]);
 
+    // Handle file attachment
+    const handleAttachFile = useCallback(async () => {
+        try {
+            const result = await DocumentPicker.getDocumentAsync({
+                type: '*/*',
+                copyToCacheDirectory: true,
+            });
+
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+                const file = result.assets[0];
+                setAttachedFile(file);
+                Alert.alert(
+                    language === 'pl' ? 'Plik załączony' : 'File attached',
+                    file.name
+                );
+            }
+        } catch (error) {
+            console.error('Error picking document:', error);
+            Alert.alert(
+                language === 'pl' ? 'Błąd' : 'Error',
+                language === 'pl' ? 'Nie udało się wybrać pliku' : 'Failed to pick file'
+            );
+        }
+    }, [language]);
+
+    // Handle voice recording
+    const handleVoiceRecord = useCallback(async () => {
+        if (isRecording) {
+            // Stop recording
+            try {
+                if (recordingRef.current) {
+                    await recordingRef.current.stopAndUnloadAsync();
+                    const uri = recordingRef.current.getURI();
+                    recordingRef.current = null;
+                    setIsRecording(false);
+
+                    // For now, just show that recording was captured
+                    Alert.alert(
+                        language === 'pl' ? 'Nagranie zakończone' : 'Recording complete',
+                        language === 'pl' ? 'Funkcja transkrypcji wkrótce dostępna' : 'Transcription feature coming soon'
+                    );
+                }
+            } catch (error) {
+                console.error('Error stopping recording:', error);
+            }
+        } else {
+            // Start recording
+            try {
+                const permission = await Audio.requestPermissionsAsync();
+                if (permission.status !== 'granted') {
+                    Alert.alert(
+                        language === 'pl' ? 'Brak dostępu' : 'Permission denied',
+                        language === 'pl' ? 'Wymagany dostęp do mikrofonu' : 'Microphone access required'
+                    );
+                    return;
+                }
+
+                await Audio.setAudioModeAsync({
+                    allowsRecordingIOS: true,
+                    playsInSilentModeIOS: true,
+                });
+
+                const { recording } = await Audio.Recording.createAsync(
+                    Audio.RecordingOptionsPresets.HIGH_QUALITY
+                );
+                recordingRef.current = recording;
+                setIsRecording(true);
+            } catch (error) {
+                console.error('Error starting recording:', error);
+                Alert.alert(
+                    language === 'pl' ? 'Błąd' : 'Error',
+                    language === 'pl' ? 'Nie udało się rozpocząć nagrywania' : 'Failed to start recording'
+                );
+            }
+        }
+    }, [isRecording, language]);
+
     const handleSpeak = useCallback((text: string) => {
         // Remove markdown formatting for cleaner TTS
         const cleanText = text
@@ -409,26 +490,61 @@ export function ChatScreen({ route, navigation }: Props) {
                         paddingBottom: keyboardHeight > 0 ? 12 : 48,
                     }
                 ]}>
-                    <TextInput
-                        style={[styles.input, { color: colors.text, backgroundColor: colors.background }]}
-                        value={inputText}
-                        onChangeText={setInputText}
-                        placeholder={t.chat.placeholder}
-                        placeholderTextColor={colors.textSecondary}
-                        multiline
-                        maxLength={4000}
-                        editable={!isLoading}
-                    />
-                    <TouchableOpacity
-                        style={[
-                            styles.sendButton,
-                            { backgroundColor: inputText.trim() ? colors.primary : colors.border }
-                        ]}
-                        onPress={handleSend}
-                        disabled={!inputText.trim() || isLoading}
-                    >
-                        <Text style={styles.sendButtonText}>➤</Text>
-                    </TouchableOpacity>
+                    {/* Attached file indicator */}
+                    {attachedFile && (
+                        <View style={[styles.attachedFileRow, { backgroundColor: colors.background }]}>
+                            <Text style={[styles.attachedFileName, { color: colors.text }]} numberOfLines={1}>
+                                📎 {attachedFile.name}
+                            </Text>
+                            <TouchableOpacity onPress={() => setAttachedFile(null)}>
+                                <Text style={[styles.removeAttachment, { color: colors.error }]}>✕</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
+                    <View style={styles.inputRow}>
+                        {/* Attach file button */}
+                        <TouchableOpacity
+                            style={styles.inputActionButton}
+                            onPress={handleAttachFile}
+                            disabled={isLoading}
+                        >
+                            <Text style={[styles.inputActionIcon, { color: colors.textSecondary }]}>+</Text>
+                        </TouchableOpacity>
+
+                        <TextInput
+                            style={[styles.input, { color: colors.text, backgroundColor: colors.background }]}
+                            value={inputText}
+                            onChangeText={setInputText}
+                            placeholder={t.chat.placeholder}
+                            placeholderTextColor={colors.textSecondary}
+                            multiline
+                            maxLength={4000}
+                            editable={!isLoading}
+                        />
+
+                        {/* Voice record button */}
+                        <TouchableOpacity
+                            style={styles.inputActionButton}
+                            onPress={handleVoiceRecord}
+                            disabled={isLoading}
+                        >
+                            <Text style={[styles.inputActionIcon, { color: isRecording ? colors.error : colors.textSecondary }]}>
+                                {isRecording ? '⏹' : '🎤'}
+                            </Text>
+                        </TouchableOpacity>
+
+                        {/* Send button */}
+                        <TouchableOpacity
+                            style={[
+                                styles.sendButton,
+                                { backgroundColor: inputText.trim() ? colors.primary : colors.border }
+                            ]}
+                            onPress={handleSend}
+                            disabled={!inputText.trim() || isLoading}
+                        >
+                            <Text style={styles.sendButtonText}>➤</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </KeyboardAvoidingView>
 
@@ -504,12 +620,43 @@ const styles = StyleSheet.create({
         borderBottomLeftRadius: 4,
     },
     inputContainer: {
-        flexDirection: 'row',
+        flexDirection: 'column',
         padding: 12,
         paddingBottom: 48,
-        alignItems: 'flex-end',
         borderTopWidth: 1,
         borderTopColor: 'rgba(0,0,0,0.1)',
+    },
+    inputRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+    },
+    attachedFileRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 8,
+        marginBottom: 8,
+    },
+    attachedFileName: {
+        flex: 1,
+        fontSize: 14,
+    },
+    removeAttachment: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        paddingLeft: 12,
+    },
+    inputActionButton: {
+        width: 40,
+        height: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    inputActionIcon: {
+        fontSize: 22,
+        fontWeight: 'bold',
     },
     input: {
         flex: 1,
