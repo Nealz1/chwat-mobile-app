@@ -37,6 +37,8 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
     const [userMenuVisible, setUserMenuVisible] = useState(false);
     const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null);
     const [actionMenuVisible, setActionMenuVisible] = useState(false);
+    const [groups, setGroups] = useState<{ id: number; name: string }[]>([]);
+    const [groupPickerVisible, setGroupPickerVisible] = useState(false);
 
     useEffect(() => {
         if (visible) {
@@ -60,6 +62,8 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
         setUser(currentUser);
         if (currentUser) {
             await loadSessions();
+            const groupsList = await chatService.getGroups();
+            setGroups(groupsList);
         }
     };
 
@@ -157,6 +161,20 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                 }
             ]
         );
+    };
+
+    const handleMoveToGroupOpen = () => {
+        setActionMenuVisible(false);
+        setGroupPickerVisible(true);
+    };
+
+    const handleSelectGroup = async (groupId: number | null) => {
+        if (!selectedSession) return;
+        setGroupPickerVisible(false);
+        const success = await chatService.moveToGroup(selectedSession.id, groupId);
+        if (success) {
+            await loadSessions();
+        }
     };
 
     const filteredSessions = sessions.filter(s =>
@@ -411,6 +429,16 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
 
                         <TouchableOpacity
                             style={styles.actionMenuItem}
+                            onPress={handleMoveToGroupOpen}
+                        >
+                            <Text style={[styles.actionMenuIcon, { color: colors.text }]}>📁</Text>
+                            <Text style={[styles.actionMenuText, { color: colors.text }]}>
+                                {language === 'pl' ? 'Przenieś do grupy' : 'Move to group'}
+                            </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.actionMenuItem}
                             onPress={handleDeleteSession}
                         >
                             <Text style={[styles.actionMenuIcon, { color: colors.error }]}>🗑</Text>
@@ -418,6 +446,48 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                 {language === 'pl' ? 'Usuń' : 'Delete'}
                             </Text>
                         </TouchableOpacity>
+                    </View>
+                </Pressable>
+            </Modal>
+
+            {/* Group Picker Modal */}
+            <Modal
+                visible={groupPickerVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setGroupPickerVisible(false)}
+            >
+                <Pressable
+                    style={styles.actionMenuOverlay}
+                    onPress={() => setGroupPickerVisible(false)}
+                >
+                    <View style={[styles.actionMenuContent, { backgroundColor: colors.surface }]}>
+                        <Text style={[styles.actionMenuTitle, { color: colors.text }]}>
+                            {language === 'pl' ? 'Wybierz grupę' : 'Select group'}
+                        </Text>
+
+                        <TouchableOpacity
+                            style={styles.actionMenuItem}
+                            onPress={() => handleSelectGroup(null)}
+                        >
+                            <Text style={[styles.actionMenuIcon, { color: colors.textSecondary }]}>✕</Text>
+                            <Text style={[styles.actionMenuText, { color: colors.textSecondary }]}>
+                                {language === 'pl' ? 'Brak grupy' : 'No group'}
+                            </Text>
+                        </TouchableOpacity>
+
+                        {groups.map(group => (
+                            <TouchableOpacity
+                                key={group.id}
+                                style={styles.actionMenuItem}
+                                onPress={() => handleSelectGroup(group.id)}
+                            >
+                                <Text style={[styles.actionMenuIcon, { color: colors.text }]}>📁</Text>
+                                <Text style={[styles.actionMenuText, { color: colors.text }]}>
+                                    {group.name}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
                     </View>
                 </Pressable>
             </Modal>

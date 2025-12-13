@@ -183,6 +183,42 @@ class ChatService {
             return false;
         }
     }
+
+    // Move session to group
+    async moveToGroup(sessionId: number, groupId: number | null): Promise<boolean> {
+        try {
+            const headers = await authService.getAuthHeaders();
+            const response = await fetch(
+                `${API_BASE_URL}/chat/sessions/${sessionId}/group`,
+                {
+                    method: 'PUT',
+                    headers: {
+                        ...headers,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ group_id: groupId }),
+                }
+            );
+            return response.ok;
+        } catch (error) {
+            console.error('Error moving session to group:', error);
+            return false;
+        }
+    }
+
+    // Get groups list
+    async getGroups(): Promise<{ id: number; name: string }[]> {
+        try {
+            const headers = await authService.getAuthHeaders();
+            const response = await fetch(`${API_BASE_URL}/chat/groups`, { headers });
+            if (!response.ok) return [];
+            const data = await response.json();
+            return data.groups || [];
+        } catch (error) {
+            console.error('Error fetching groups:', error);
+            return [];
+        }
+    }
 }
 
 export const chatService = new ChatService();
