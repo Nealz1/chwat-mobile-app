@@ -7,6 +7,7 @@ import { SessionsScreen } from '../screens/SessionsScreen';
 import { LoginScreen } from '../screens/LoginScreen';
 import { GroupsScreen } from '../screens/GroupsScreen';
 import { HelpScreen } from '../screens/HelpScreen';
+import { useTheme } from '../contexts/ThemeContext';
 
 export type RootStackParamList = {
     Chat: { sessionId?: number } | undefined;
@@ -20,15 +21,21 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function AppNavigator() {
+    const { isDark, colors } = useTheme();
+
+    // Light gray header for dark mode, dark header for light mode
+    const headerBgColor = isDark ? '#f5f5f5' : '#1f1f1f';
+    const headerTextColor = isDark ? '#1a1a1a' : '#ffffff';
+
     return (
         <NavigationContainer>
             <Stack.Navigator
                 initialRouteName="Chat"
                 screenOptions={{
                     headerStyle: {
-                        backgroundColor: '#1f1f1f',
+                        backgroundColor: headerBgColor,
                     },
-                    headerTintColor: '#fff',
+                    headerTintColor: headerTextColor,
                     headerTitleStyle: {
                         fontWeight: 'bold',
                     },
