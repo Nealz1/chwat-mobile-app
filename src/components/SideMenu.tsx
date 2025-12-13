@@ -33,6 +33,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
     const [sessions, setSessions] = useState<ChatSession[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [slideAnim] = useState(new Animated.Value(-DRAWER_WIDTH));
+    const [userMenuVisible, setUserMenuVisible] = useState(false);
 
     useEffect(() => {
         if (visible) {
@@ -217,30 +218,50 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                             )}
                         </ScrollView>
 
-                        {/* Bottom: User */}
+                        {/* Bottom: User with menu */}
                         <View style={[styles.bottomSection, { borderTopColor: borderColor }]}>
-                            {user ? (
+                            {/* Menu items */}
+                            <TouchableOpacity
+                                style={styles.menuItem}
+                                onPress={() => navigateTo('Settings')}
+                            >
+                                <Text style={styles.menuItemIcon}>←</Text>
+                                <Text style={[styles.menuItemText, { color: colors.text }]}>
+                                    {language === 'pl' ? 'Ustawienia' : 'Settings'}
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.menuItem}
+                                onPress={() => navigateTo('Help')}
+                            >
+                                <Text style={styles.menuItemIcon}>ⓘ</Text>
+                                <Text style={[styles.menuItemText, { color: colors.text }]}>
+                                    {language === 'pl' ? 'Pomoc' : 'Help'}
+                                </Text>
+                            </TouchableOpacity>
+                            {!user && (
                                 <TouchableOpacity
-                                    style={styles.userSection}
-                                    onPress={() => navigateTo('Settings')}
-                                >
-                                    <Text style={styles.userIcon}>👤</Text>
-                                    <Text style={[styles.userName, { color: colors.text }]} numberOfLines={1}>
-                                        {user.first_name} {user.last_name}
-                                    </Text>
-                                    <Text style={styles.menuDots}>⋮</Text>
-                                </TouchableOpacity>
-                            ) : (
-                                <TouchableOpacity
-                                    style={styles.userSection}
+                                    style={styles.menuItem}
                                     onPress={() => navigateTo('Login')}
                                 >
-                                    <Text style={styles.userIcon}>👤</Text>
-                                    <Text style={[styles.userName, { color: colors.primary }]}>
+                                    <Text style={styles.menuItemIcon}>←</Text>
+                                    <Text style={[styles.menuItemText, { color: colors.text }]}>
                                         {language === 'pl' ? 'Zaloguj się' : 'Login'}
                                     </Text>
                                 </TouchableOpacity>
                             )}
+
+                            {/* User info row */}
+                            <TouchableOpacity
+                                style={[styles.userSection, { marginTop: 8 }]}
+                                onPress={() => user ? navigateTo('Settings') : navigateTo('Login')}
+                            >
+                                <Text style={styles.userIcon}>👤</Text>
+                                <Text style={[styles.userName, { color: user ? colors.text : colors.textSecondary }]} numberOfLines={1}>
+                                    {user ? `${user.first_name} ${user.last_name}` : (language === 'pl' ? 'Gość' : 'Guest')}
+                                </Text>
+                                <Text style={styles.menuDots}>⋮</Text>
+                            </TouchableOpacity>
                         </View>
                     </Pressable>
                 </Animated.View>
@@ -363,5 +384,19 @@ const styles = StyleSheet.create({
     menuDots: {
         fontSize: 18,
         color: '#888',
+    },
+    menuItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 8,
+        paddingHorizontal: 4,
+    },
+    menuItemIcon: {
+        fontSize: 16,
+        marginRight: 10,
+        color: '#888',
+    },
+    menuItemText: {
+        fontSize: 14,
     },
 });
