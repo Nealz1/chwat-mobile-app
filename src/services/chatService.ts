@@ -72,19 +72,38 @@ class ChatService {
     }
 
     async sendGuestMessage(message: string): Promise<{ response: string }> {
-        const response = await fetch(`${API_BASE_URL}/guest/chat`, {
+        // Use the same endpoint as web frontend (streaming returns full response)
+        const response = await fetch(`${API_BASE_URL}/chat/stream`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ message }),
+            body: JSON.stringify({ message, session_id: null }),
         });
 
         if (!response.ok) {
             throw new Error('Failed to send guest message');
         }
 
-        return await response.json();
+        // For non-streaming, read the SSE response and extract full_response
+        const text = await response.text();
+        const lines = text.split('\n');
+        let fullResponse = '';
+
+        for (const line of lines) {
+            if (line.startsWith('data: ')) {
+                try {
+                    const data = JSON.parse(line.slice(6));
+                    if (data.type === 'done' && data.full_response) {
+                        fullResponse = data.full_response;
+                    }
+                } catch (e) {
+                    // Skip unparseable lines
+                }
+            }
+        }
+
+        return { response: fullResponse };
     }
 
     async deleteSession(sessionId: number): Promise<boolean> {
