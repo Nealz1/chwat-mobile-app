@@ -1,0 +1,189 @@
+/**
+ * Streaming Service for React Native
+ * Handles Server-Sent Events (SSE) for real-time chat responses
+ */
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_BASE_URL, STORAGE_KEYS } from '../config/constants';
+
+export interface StreamEvent {
+    type: 'start' | 'token' | 'done' | 'error' | 'status';
+    content?: string;
+    message?: string;
+    full_response?: string;
+    session_id?: number;
+    file_download?: {
+        filename: string;
+        path: string;
+    };
+}
+
+export interface StreamOptions {
+    message: string;
+    sessionId?: number | null;
+    onStart?: () => void;
+    onToken?: (token: string) => void;
+    onDone?: (fullResponse: string, sessionId?: number) => void;
+    onError?: (error: string) => void;
+    onStatus?: (status: string) => void;
+    onFileDownload?: (filename: string, path: string) => void;
+    abortController?: AbortController;
+    useAgents?: boolean;
+}
+
+/**
+ * Stream chat response using SSE (Server-Sent Events)
+ * React Native supports ReadableStream in newer versions
+ */
+export async function streamChatResponse(options: StreamOptions): Promise<void> {
+    const {
+        message,
+        sessionId,
+        onStart,
+        onToken,
+        onDone,
+        onError,
+        onStatus,
+        onFileDownload,
+        abortController,
+        useAgents = false,
+    } = options;
+
+    const token = await AsyncStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+
+    const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+    };
+
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const endpoint = useAgents ? '/chat/stream/agents' : '/chat/stream';
+
+    try {
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+                message,
+                session_id: typeof sessionId === 'number' ? sessionId : null,
+            }),
+            signal: abortController?.signal,
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        if (!response.body) {
+            throw new Error('Response body is null');
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        let buffer = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+
+            if (done) {
+                break;
+            }
+
+            buffer += decoder.decode(value, { stream: true });
+
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    try {
+                        const eventData: StreamEvent = JSON.parse(line.slice(6));
+
+                        switch (eventData.type) {
+                            case 'start':
+                                onStart?.();
+                                break;
+                            case 'token':
+                                if (eventData.content) {
+                                    onToken?.(eventData.content);
+                                }
+                                break;
+                            case 'done':
+                                onDone?.(eventData.full_response || '', eventData.session_id);
+                                if (eventData.file_download && onFileDownload) {
+                                    onFileDownload(eventData.file_download.filename, eventData.file_download.path);
+                                }
+                                break;
+                            case 'error':
+                                onError?.(eventData.message || 'Unknown error');
+                                break;
+                            case 'status':
+                                onStatus?.(eventData.message || '');
+                                break;
+                        }
+                    } catch (parseError) {
+                        console.warn('Failed to parse SSE event:', line, parseError);
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        // Handle abort
+        if (error instanceof Error && error.name === 'AbortError') {
+            return;
+        }
+
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        onError?.(errorMessage);
+        throw error;
+    }
+}
+
+/**
+ * Check if streaming is supported on this device
+ * React Native Hermes engine supports ReadableStream since version 0.71
+ */
+export function isStreamingSupported(): boolean {
+    return typeof ReadableStream !== 'undefined' && typeof TextDecoder !== 'undefined';
+}
+
+/**
+ * Fallback: Non-streaming chat response
+ * Use this when streaming is not supported
+ */
+export async function sendChatMessageFallback(
+    message: string,
+    sessionId?: number | null
+): Promise<{ response: string; sessionId?: number }> {
+    const token = await AsyncStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+
+    const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+    };
+
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/chat/message`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+            message,
+            session_id: typeof sessionId === 'number' ? sessionId : null,
+        }),
+    });
+
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+        response: data.response || data.message || '',
+        sessionId: data.session_id,
+    };
+}

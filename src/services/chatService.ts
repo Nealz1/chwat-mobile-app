@@ -219,6 +219,110 @@ class ChatService {
             return [];
         }
     }
+
+    // ==================== MESSAGE TREE/VERSIONING METHODS ====================
+
+    // Get conversation tree with message versions
+    async getConversationTree(sessionId: number): Promise<any[]> {
+        try {
+            const headers = await authService.getAuthHeaders();
+            const response = await fetch(
+                `${API_BASE_URL}/chat/sessions/${sessionId}/tree`,
+                { headers }
+            );
+            if (!response.ok) return [];
+            const data = await response.json();
+            return data.tree || [];
+        } catch (error) {
+            console.error('Error fetching conversation tree:', error);
+            return [];
+        }
+    }
+
+    // Get sibling messages for version navigation
+    async getMessageSiblings(nodeId: number): Promise<any[]> {
+        try {
+            const headers = await authService.getAuthHeaders();
+            const response = await fetch(
+                `${API_BASE_URL}/chat/messages/${nodeId}/siblings`,
+                { headers }
+            );
+            if (!response.ok) return [];
+            const data = await response.json();
+            return data.siblings || [];
+        } catch (error) {
+            console.error('Error fetching message siblings:', error);
+            return [];
+        }
+    }
+
+    // Set active version of a message
+    async setActiveVersion(sessionId: number, parentNodeId: number, childId: number): Promise<boolean> {
+        try {
+            const headers = await authService.getAuthHeaders();
+            const response = await fetch(
+                `${API_BASE_URL}/chat/sessions/${sessionId}/messages/${parentNodeId}/set-active`,
+                {
+                    method: 'POST',
+                    headers: {
+                        ...headers,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ child_id: childId }),
+                }
+            );
+            return response.ok;
+        } catch (error) {
+            console.error('Error setting active version:', error);
+            return false;
+        }
+    }
+
+    // Regenerate bot response (creates new version)
+    async regenerateResponse(sessionId: number, parentNodeId: number): Promise<any> {
+        try {
+            const headers = await authService.getAuthHeaders();
+            const response = await fetch(
+                `${API_BASE_URL}/chat/sessions/${sessionId}/regenerate`,
+                {
+                    method: 'POST',
+                    headers: {
+                        ...headers,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ parent_node_id: parentNodeId }),
+                }
+            );
+            if (!response.ok) return null;
+            return await response.json();
+        } catch (error) {
+            console.error('Error regenerating response:', error);
+            return null;
+        }
+    }
+
+    // Edit user message (creates new branch)
+    async editMessage(sessionId: number, nodeId: number, content: string): Promise<any> {
+        try {
+            const headers = await authService.getAuthHeaders();
+            const response = await fetch(
+                `${API_BASE_URL}/chat/sessions/${sessionId}/messages/${nodeId}/edit`,
+                {
+                    method: 'PUT',
+                    headers: {
+                        ...headers,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ content, node_id: nodeId }),
+                }
+            );
+            if (!response.ok) return null;
+            return await response.json();
+        } catch (error) {
+            console.error('Error editing message:', error);
+            return null;
+        }
+    }
 }
 
 export const chatService = new ChatService();
