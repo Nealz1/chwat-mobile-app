@@ -510,10 +510,7 @@ export function ChatScreen({ route, navigation }: Props) {
                 {/* Input Area */}
                 <View style={[
                     styles.inputContainer,
-                    {
-                        backgroundColor: colors.surface,
-                        paddingBottom: keyboardHeight > 0 ? 12 : 48,
-                    }
+                    { backgroundColor: colors.surface }
                 ]}>
                     {/* Attached file indicator */}
                     {attachedFile && (
@@ -675,7 +672,7 @@ const styles = StyleSheet.create({
     inputContainer: {
         flexDirection: 'column',
         padding: 12,
-        paddingBottom: 48,
+        paddingBottom: 16,
         borderTopWidth: 1,
         borderTopColor: 'rgba(0,0,0,0.1)',
     },
