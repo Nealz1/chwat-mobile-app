@@ -17,7 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import * as Speech from 'expo-speech';
 import * as DocumentPicker from 'expo-document-picker';
-import { Audio } from 'expo-av';
+import { useAudioRecorder, AudioModule, RecordingPresets } from 'expo-audio';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Markdown from 'react-native-markdown-display';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -49,7 +49,7 @@ export function ChatScreen({ route, navigation }: Props) {
     const [editText, setEditText] = useState('');
     const [attachedFile, setAttachedFile] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
     const [isRecording, setIsRecording] = useState(false);
-    const recordingRef = useRef<Audio.Recording | null>(null);
+    const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
     const [explainModalVisible, setExplainModalVisible] = useState(false);
     const [explainText, setExplainText] = useState('');
 
@@ -315,26 +315,25 @@ export function ChatScreen({ route, navigation }: Props) {
         if (isRecording) {
             // Stop recording
             try {
-                if (recordingRef.current) {
-                    await recordingRef.current.stopAndUnloadAsync();
-                    const uri = recordingRef.current.getURI();
-                    recordingRef.current = null;
-                    setIsRecording(false);
+                audioRecorder.stop();
+                setIsRecording(false);
 
-                    // For now, just show that recording was captured
-                    Alert.alert(
-                        language === 'pl' ? 'Nagranie zakończone' : 'Recording complete',
-                        language === 'pl' ? 'Funkcja transkrypcji wkrótce dostępna' : 'Transcription feature coming soon'
-                    );
-                }
+                // Get the recorded URI
+                const uri = audioRecorder.uri;
+
+                // For now, just show that recording was captured
+                Alert.alert(
+                    language === 'pl' ? 'Nagranie zakończone' : 'Recording complete',
+                    language === 'pl' ? 'Funkcja transkrypcji wkrótce dostępna' : 'Transcription feature coming soon'
+                );
             } catch (error) {
                 console.error('Error stopping recording:', error);
             }
         } else {
             // Start recording
             try {
-                const permission = await Audio.requestPermissionsAsync();
-                if (permission.status !== 'granted') {
+                const status = await AudioModule.requestRecordingPermissionsAsync();
+                if (!status.granted) {
                     Alert.alert(
                         language === 'pl' ? 'Brak dostępu' : 'Permission denied',
                         language === 'pl' ? 'Wymagany dostęp do mikrofonu' : 'Microphone access required'
@@ -342,15 +341,7 @@ export function ChatScreen({ route, navigation }: Props) {
                     return;
                 }
 
-                await Audio.setAudioModeAsync({
-                    allowsRecordingIOS: true,
-                    playsInSilentModeIOS: true,
-                });
-
-                const { recording } = await Audio.Recording.createAsync(
-                    Audio.RecordingOptionsPresets.HIGH_QUALITY
-                );
-                recordingRef.current = recording;
+                audioRecorder.record();
                 setIsRecording(true);
             } catch (error) {
                 console.error('Error starting recording:', error);
@@ -360,7 +351,7 @@ export function ChatScreen({ route, navigation }: Props) {
                 );
             }
         }
-    }, [isRecording, language]);
+    }, [isRecording, language, audioRecorder]);
 
     const handleSpeak = useCallback((text: string) => {
         // Remove markdown formatting for cleaner TTS
@@ -494,8 +485,8 @@ export function ChatScreen({ route, navigation }: Props) {
             />
             <KeyboardAvoidingView
                 style={styles.container}
-                behavior="padding"
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 120}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
             >
                 {/* Messages List */}
                 <FlatList
@@ -672,7 +663,6 @@ const styles = StyleSheet.create({
     inputContainer: {
         flexDirection: 'column',
         padding: 12,
-        paddingBottom: 16,
         borderTopWidth: 1,
         borderTopColor: 'rgba(0,0,0,0.1)',
     },
