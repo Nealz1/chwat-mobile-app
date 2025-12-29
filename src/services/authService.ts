@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Linking } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 import { API_BASE_URL, STORAGE_KEYS } from '../config/constants';
 import type { User } from '../types';
 
@@ -31,21 +32,42 @@ class AuthService {
     }
 
     /**
-     * Opens USOS login in external browser
-     * User will be redirected back and need to copy token
+     * Opens USOS login in in-app browser (OAuth flow)
+     * Returns the JWT token on success, null on failure/cancel
      */
-    async login(): Promise<void> {
+    async loginWithOAuth(): Promise<string | null> {
         try {
-            // Get the USOS auth URL from our backend
-            const response = await fetch(`${API_BASE_URL}/usos/login`);
+            // Get the USOS auth URL from backend (with mobile platform)
+            const response = await fetch(`${API_BASE_URL}/usos/login?platform=mobile`);
             const data = await response.json();
 
-            if (data.auth_url) {
-                // Open in external browser
-                await Linking.openURL(data.auth_url);
+            if (!data.auth_url) {
+                throw new Error('No auth URL returned');
             }
+
+            // The redirect URL that USOS will return to
+            const redirectUrl = Linking.createURL('auth');
+
+            // Open auth session in in-app browser
+            const result = await WebBrowser.openAuthSessionAsync(
+                data.auth_url,
+                redirectUrl
+            );
+
+            if (result.type === 'success' && result.url) {
+                // Extract token from callback URL
+                const url = new URL(result.url);
+                const token = url.searchParams.get('token');
+
+                if (token) {
+                    await this.setToken(token);
+                    return token;
+                }
+            }
+
+            return null;
         } catch (error) {
-            console.error('Login error:', error);
+            console.error('OAuth login error:', error);
             throw error;
         }
     }
