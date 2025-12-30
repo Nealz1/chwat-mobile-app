@@ -112,6 +112,41 @@ class AuthService {
             body: JSON.stringify({ node_id: nodeId, feedback }),
         });
     }
+
+    async getAccountPreferences(): Promise<any> {
+        const token = await this.getToken();
+        if (!token) return null;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/account/preferences`, {
+                headers: { 'Authorization': `Bearer ${token}` },
+            });
+
+            if (!response.ok) return null;
+            return await response.json();
+        } catch {
+            return null;
+        }
+    }
+
+    async updateAccountPreferences(preferences: any): Promise<boolean> {
+        const token = await this.getToken();
+        if (!token) return false;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/account/preferences`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(preferences),
+            });
+            return response.ok;
+        } catch {
+            return false;
+        }
+    }
 }
 
 export const authService = new AuthService();

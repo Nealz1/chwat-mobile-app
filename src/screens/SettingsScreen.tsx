@@ -67,9 +67,17 @@ export function SettingsScreen({ navigation }: Props) {
 
     const loadAccountInfo = async () => {
         try {
-            const saved = await AsyncStorage.getItem(ACCOUNT_STORAGE_KEY);
-            if (saved) {
-                setAccountInfo(prev => ({ ...prev, ...JSON.parse(saved) }));
+            // First try to load from backend
+            const preferences = await authService.getAccountPreferences();
+            if (preferences?.preferences) {
+                const prefs = preferences.preferences;
+                setAccountInfo(prev => ({
+                    ...prev,
+                    groupName: prefs.group_name || '',
+                    studentIndex: prefs.student_index || '',
+                    phoneNumber: prefs.phone_number || '',
+                    faculty: prefs.faculty || '',
+                }));
             }
         } catch (error) {
             console.error('Error loading account info:', error);
@@ -78,7 +86,12 @@ export function SettingsScreen({ navigation }: Props) {
 
     const saveAccountInfo = async (info: AccountInfo) => {
         try {
-            await AsyncStorage.setItem(ACCOUNT_STORAGE_KEY, JSON.stringify(info));
+            await authService.updateAccountPreferences({
+                group_name: info.groupName,
+                student_index: info.studentIndex,
+                phone_number: info.phoneNumber,
+                faculty: info.faculty,
+            });
         } catch (error) {
             console.error('Error saving account info:', error);
         }
