@@ -29,7 +29,14 @@ interface AccountInfo {
     groupName: string;
     studentIndex: string;
     phoneNumber: string;
+    email: string;
     faculty: string;
+    studyLevel: string;
+    street: string;
+    buildingNumber: string;
+    apartmentNumber: string;
+    postalCode: string;
+    city: string;
 }
 
 const ACCOUNT_STORAGE_KEY = 'account_info';
@@ -45,7 +52,14 @@ export function SettingsScreen({ navigation }: Props) {
         groupName: '',
         studentIndex: '',
         phoneNumber: '',
+        email: '',
         faculty: '',
+        studyLevel: '',
+        street: '',
+        buildingNumber: '',
+        apartmentNumber: '',
+        postalCode: '',
+        city: '',
     });
 
     useEffect(() => {
@@ -67,7 +81,6 @@ export function SettingsScreen({ navigation }: Props) {
 
     const loadAccountInfo = async () => {
         try {
-            // First try to load from backend
             const preferences = await authService.getAccountPreferences();
             if (preferences?.preferences) {
                 const prefs = preferences.preferences;
@@ -76,7 +89,14 @@ export function SettingsScreen({ navigation }: Props) {
                     groupName: prefs.group_name || '',
                     studentIndex: prefs.student_index || '',
                     phoneNumber: prefs.phone_number || '',
+                    email: prefs.email_username || '',
                     faculty: prefs.faculty || '',
+                    studyLevel: prefs.study_level || '',
+                    street: prefs.street || '',
+                    buildingNumber: prefs.building_number || '',
+                    apartmentNumber: prefs.apartment_number || '',
+                    postalCode: prefs.postal_code || '',
+                    city: prefs.city || '',
                 }));
             }
         } catch (error) {
@@ -90,7 +110,14 @@ export function SettingsScreen({ navigation }: Props) {
                 group_name: info.groupName,
                 student_index: info.studentIndex,
                 phone_number: info.phoneNumber,
+                email_username: info.email,
                 faculty: info.faculty,
+                study_level: info.studyLevel,
+                street: info.street,
+                building_number: info.buildingNumber,
+                apartment_number: info.apartmentNumber,
+                postal_code: info.postalCode,
+                city: info.city,
             });
         } catch (error) {
             console.error('Error saving account info:', error);
@@ -315,6 +342,19 @@ export function SettingsScreen({ navigation }: Props) {
                                     keyboardType="phone-pad"
                                 />
                             </View>
+
+                            <View style={styles.inputRow}>
+                                <Text style={[styles.inputLabel, { color: colors.text }]}>Email</Text>
+                                <TextInput
+                                    style={[styles.input, { color: colors.text, backgroundColor: colors.background }]}
+                                    value={accountInfo.email}
+                                    onChangeText={(v) => updateAccountField('email', v)}
+                                    placeholder={language === 'pl' ? 'Nazwa użytkownika email' : 'Email username'}
+                                    placeholderTextColor={colors.textSecondary}
+                                    autoCapitalize="none"
+                                    keyboardType="email-address"
+                                />
+                            </View>
                         </View>
 
                         {/* Academic Info */}
@@ -366,6 +406,97 @@ export function SettingsScreen({ navigation }: Props) {
                                         ))}
                                     </Picker>
                                 </View>
+                            </View>
+
+                            <View style={styles.inputRow}>
+                                <Text style={[styles.inputLabel, { color: colors.text }]}>
+                                    {language === 'pl' ? 'Poziom studiów' : 'Study Level'}
+                                </Text>
+                                <View style={[styles.pickerContainer, { backgroundColor: colors.background }]}>
+                                    <Picker
+                                        selectedValue={accountInfo.studyLevel}
+                                        onValueChange={(v) => updateAccountField('studyLevel', v as string)}
+                                        style={{ color: colors.text }}
+                                    >
+                                        <Picker.Item label={language === 'pl' ? 'Wybierz poziom' : 'Select level'} value="" />
+                                        <Picker.Item label={language === 'pl' ? 'Inżynierskie (I stopień)' : 'Bachelor (1st degree)'} value="engineer" />
+                                        <Picker.Item label={language === 'pl' ? 'Magisterskie (II stopień)' : 'Master (2nd degree)'} value="master" />
+                                        <Picker.Item label={language === 'pl' ? 'Jednolite magisterskie' : 'Unified Master'} value="unified" />
+                                        <Picker.Item label={language === 'pl' ? 'Doktoranckie' : 'Doctoral'} value="doctoral" />
+                                    </Picker>
+                                </View>
+                            </View>
+                        </View>
+
+                        {/* Address Section */}
+                        <View style={[styles.section, { backgroundColor: colors.surface }]}>
+                            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+                                {language === 'pl' ? 'ADRES' : 'ADDRESS'}
+                            </Text>
+
+                            <View style={styles.inputRow}>
+                                <Text style={[styles.inputLabel, { color: colors.text }]}>
+                                    {language === 'pl' ? 'Ulica' : 'Street'}
+                                </Text>
+                                <TextInput
+                                    style={[styles.input, { color: colors.text, backgroundColor: colors.background }]}
+                                    value={accountInfo.street}
+                                    onChangeText={(v) => updateAccountField('street', v)}
+                                    placeholder={language === 'pl' ? 'Nazwa ulicy' : 'Street name'}
+                                    placeholderTextColor={colors.textSecondary}
+                                />
+                            </View>
+
+                            <View style={styles.inputRow}>
+                                <Text style={[styles.inputLabel, { color: colors.text }]}>
+                                    {language === 'pl' ? 'Nr budynku' : 'Building No.'}
+                                </Text>
+                                <TextInput
+                                    style={[styles.input, { color: colors.text, backgroundColor: colors.background }]}
+                                    value={accountInfo.buildingNumber}
+                                    onChangeText={(v) => updateAccountField('buildingNumber', v)}
+                                    placeholder="np. 12A"
+                                    placeholderTextColor={colors.textSecondary}
+                                />
+                            </View>
+
+                            <View style={styles.inputRow}>
+                                <Text style={[styles.inputLabel, { color: colors.text }]}>
+                                    {language === 'pl' ? 'Nr mieszkania' : 'Apt No.'}
+                                </Text>
+                                <TextInput
+                                    style={[styles.input, { color: colors.text, backgroundColor: colors.background }]}
+                                    value={accountInfo.apartmentNumber}
+                                    onChangeText={(v) => updateAccountField('apartmentNumber', v)}
+                                    placeholder="np. 5"
+                                    placeholderTextColor={colors.textSecondary}
+                                />
+                            </View>
+
+                            <View style={styles.inputRow}>
+                                <Text style={[styles.inputLabel, { color: colors.text }]}>
+                                    {language === 'pl' ? 'Kod pocztowy' : 'Postal Code'}
+                                </Text>
+                                <TextInput
+                                    style={[styles.input, { color: colors.text, backgroundColor: colors.background }]}
+                                    value={accountInfo.postalCode}
+                                    onChangeText={(v) => updateAccountField('postalCode', v)}
+                                    placeholder="00-000"
+                                    placeholderTextColor={colors.textSecondary}
+                                />
+                            </View>
+
+                            <View style={styles.inputRow}>
+                                <Text style={[styles.inputLabel, { color: colors.text }]}>
+                                    {language === 'pl' ? 'Miasto' : 'City'}
+                                </Text>
+                                <TextInput
+                                    style={[styles.input, { color: colors.text, backgroundColor: colors.background }]}
+                                    value={accountInfo.city}
+                                    onChangeText={(v) => updateAccountField('city', v)}
+                                    placeholder={language === 'pl' ? 'Nazwa miasta' : 'City name'}
+                                    placeholderTextColor={colors.textSecondary}
+                                />
                             </View>
                         </View>
                     </>
