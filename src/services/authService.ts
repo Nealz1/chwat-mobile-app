@@ -37,16 +37,22 @@ class AuthService {
      */
     async loginWithOAuth(): Promise<string | null> {
         try {
-            // Get the USOS auth URL from backend (with mobile platform)
-            const response = await fetch(`${API_BASE_URL}/usos/login?platform=mobile`);
+            // Generate the redirect URL dynamically (works with both tunnel and LAN mode)
+            const redirectUrl = Linking.createURL('auth');
+
+            console.log('Generated redirect URL:', redirectUrl);
+
+            // Send redirect_uri to backend so it knows where to redirect after auth
+            const response = await fetch(
+                `${API_BASE_URL}/usos/login?platform=mobile&redirect_uri=${encodeURIComponent(redirectUrl)}`
+            );
             const data = await response.json();
 
             if (!data.auth_url) {
                 throw new Error('No auth URL returned');
             }
 
-            // The redirect URL that USOS will return to
-            const redirectUrl = Linking.createURL('auth');
+            console.log('Opening auth URL:', data.auth_url);
 
             // Open auth session in in-app browser
             const result = await WebBrowser.openAuthSessionAsync(
@@ -54,14 +60,30 @@ class AuthService {
                 redirectUrl
             );
 
+            console.log('Auth result:', JSON.stringify(result));
+
             if (result.type === 'success' && result.url) {
+                console.log('Callback URL received:', result.url);
+
                 // Extract token from callback URL
-                const url = new URL(result.url);
-                const token = url.searchParams.get('token');
+                // Handle both helpdeskwat://auth?token=xxx and helpdeskwat://auth/?token=xxx
+                let token: string | null = null;
+
+                try {
+                    const url = new URL(result.url);
+                    token = url.searchParams.get('token');
+                } catch {
+                    // If URL parsing fails, try regex extraction
+                    const match = result.url.match(/[?&]token=([^&]+)/);
+                    token = match ? match[1] : null;
+                }
 
                 if (token) {
+                    console.log('Token extracted successfully');
                     await this.setToken(token);
                     return token;
+                } else {
+                    console.log('No token in URL');
                 }
             }
 
