@@ -16,82 +16,38 @@ class AuthService {
     }
 
     async setToken(token: string): Promise<void> {
-        try {
-            await AsyncStorage.setItem(this.TOKEN_KEY, token);
-        } catch (error) {
-            console.error('Error saving token:', error);
-        }
+        await AsyncStorage.setItem(this.TOKEN_KEY, token);
     }
 
     async removeToken(): Promise<void> {
-        try {
-            await AsyncStorage.removeItem(this.TOKEN_KEY);
-        } catch (error) {
-            console.error('Error removing token:', error);
-        }
+        await AsyncStorage.removeItem(this.TOKEN_KEY);
     }
 
-    /**
-     * Opens USOS login in in-app browser (OAuth flow)
-     * Returns the JWT token on success, null on failure/cancel
-     */
     async loginWithOAuth(): Promise<string | null> {
-        try {
-            // Generate the redirect URL dynamically (works with both tunnel and LAN mode)
-            const redirectUrl = Linking.createURL('auth');
+        const redirectUrl = Linking.createURL('auth');
 
-            console.log('Generated redirect URL:', redirectUrl);
+        const response = await fetch(
+            `${API_BASE_URL}/usos/login?platform=mobile&redirect_uri=${encodeURIComponent(redirectUrl)}`
+        );
+        const data = await response.json();
 
-            // Send redirect_uri to backend so it knows where to redirect after auth
-            const response = await fetch(
-                `${API_BASE_URL}/usos/login?platform=mobile&redirect_uri=${encodeURIComponent(redirectUrl)}`
-            );
-            const data = await response.json();
-
-            if (!data.auth_url) {
-                throw new Error('No auth URL returned');
-            }
-
-            console.log('Opening auth URL:', data.auth_url);
-
-            // Open auth session in in-app browser
-            const result = await WebBrowser.openAuthSessionAsync(
-                data.auth_url,
-                redirectUrl
-            );
-
-            console.log('Auth result:', JSON.stringify(result));
-
-            if (result.type === 'success' && result.url) {
-                console.log('Callback URL received:', result.url);
-
-                // Extract token from callback URL
-                // Handle both helpdeskwat://auth?token=xxx and helpdeskwat://auth/?token=xxx
-                let token: string | null = null;
-
-                try {
-                    const url = new URL(result.url);
-                    token = url.searchParams.get('token');
-                } catch {
-                    // If URL parsing fails, try regex extraction
-                    const match = result.url.match(/[?&]token=([^&]+)/);
-                    token = match ? match[1] : null;
-                }
-
-                if (token) {
-                    console.log('Token extracted successfully');
-                    await this.setToken(token);
-                    return token;
-                } else {
-                    console.log('No token in URL');
-                }
-            }
-
-            return null;
-        } catch (error) {
-            console.error('OAuth login error:', error);
-            throw error;
+        if (!data.auth_url) {
+            throw new Error('No auth URL returned');
         }
+
+        const result = await WebBrowser.openAuthSessionAsync(data.auth_url, redirectUrl);
+
+        if (result.type === 'success' && result.url) {
+            const match = result.url.match(/[?&]token=([^&]+)/);
+            const token = match ? match[1] : null;
+
+            if (token) {
+                await this.setToken(token);
+                return token;
+            }
+        }
+
+        return null;
     }
 
     async getCurrentUser(): Promise<User | null> {
@@ -110,8 +66,7 @@ class AuthService {
 
             const data = await response.json();
             return data.user;
-        } catch (error) {
-            console.error('Error fetching user:', error);
+        } catch {
             return null;
         }
     }
@@ -125,52 +80,37 @@ class AuthService {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}` },
                 });
-            } catch (error) {
-                console.error('Error during logout:', error);
-            }
+            } catch { }
         }
 
         await this.clearAllUserData();
     }
 
     async clearAllUserData(): Promise<void> {
-        const keysToRemove = [
+        await AsyncStorage.multiRemove([
             this.TOKEN_KEY,
             STORAGE_KEYS.CURRENT_SESSION,
             STORAGE_KEYS.GUEST_MESSAGES,
-        ];
-
-        try {
-            await AsyncStorage.multiRemove(keysToRemove);
-            console.log('All user data cleared');
-        } catch (error) {
-            console.error('Error clearing user data:', error);
-        }
+        ]);
     }
 
     async getAuthHeaders(): Promise<Record<string, string>> {
         const token = await this.getToken();
-        return token
-            ? { 'Authorization': `Bearer ${token}` }
-            : {};
+        return token ? { 'Authorization': `Bearer ${token}` } : {};
     }
 
     async submitFeedback(nodeId: number, feedback: string): Promise<void> {
         const token = await this.getToken();
         if (!token) return;
 
-        try {
-            await fetch(`${API_BASE_URL}/feedback`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ node_id: nodeId, feedback }),
-            });
-        } catch (error) {
-            console.error('Error submitting feedback:', error);
-        }
+        await fetch(`${API_BASE_URL}/feedback`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ node_id: nodeId, feedback }),
+        });
     }
 }
 
