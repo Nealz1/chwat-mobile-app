@@ -178,14 +178,22 @@ export function SettingsScreen({ navigation }: Props) {
 
     const facultyOptions = [
         { value: '', label: language === 'pl' ? 'Wybierz wydział' : 'Select faculty' },
-        { value: 'WCY', label: 'WCY - Wydział Cybernetyki' },
-        { value: 'WEL', label: 'WEL - Wydział Elektroniki' },
-        { value: 'WIG', label: 'WIG - Wydział Inżynierii Lądowej i Geodezji' },
-        { value: 'WIM', label: 'WIM - Wydział Inżynierii Mechanicznej' },
-        { value: 'WLO', label: 'WLO - Wydział Lotnictwa i Kosmonautyki' },
-        { value: 'WML', label: 'WML - Wydział Mechaniczny' },
-        { value: 'WTC', label: 'WTC - Wydział Techniki Chemicznej' },
-        { value: 'IOE', label: 'IOE - Instytut Optoelektroniki' },
+        { value: 'Wydział Cybernetyki', label: 'WCY - Wydział Cybernetyki' },
+        { value: 'Wydział Elektroniki', label: 'WEL - Wydział Elektroniki' },
+        { value: 'Wydział Inżynierii Lądowej i Geodezji', label: 'WIG - Wydział Inżynierii Lądowej i Geodezji' },
+        { value: 'Wydział Inżynierii Mechanicznej', label: 'WIM - Wydział Inżynierii Mechanicznej' },
+        { value: 'Wydział Lotnictwa i Kosmonautyki', label: 'WLO - Wydział Lotnictwa i Kosmonautyki' },
+        { value: 'Wydział Mechaniczny', label: 'WML - Wydział Mechaniczny' },
+        { value: 'Wydział Nowych Technologii i Chemii', label: 'WTC - Wydział Nowych Technologii i Chemii' },
+        { value: 'Instytut Optoelektroniki', label: 'IOE - Instytut Optoelektroniki' },
+    ];
+
+    const studyLevelOptions = [
+        { value: '', label: language === 'pl' ? 'Wybierz poziom' : 'Select level' },
+        { value: 'I', label: language === 'pl' ? 'I - studia pierwszego stopnia' : 'I - first degree' },
+        { value: 'II', label: language === 'pl' ? 'II - studia drugiego stopnia' : 'II - second degree' },
+        { value: 'JM', label: language === 'pl' ? 'JM - jednolite magisterskie' : 'JM - unified master' },
+        { value: 'III', label: language === 'pl' ? 'III - studia doktoranckie' : 'III - doctoral' },
     ];
 
     return (
@@ -434,11 +442,9 @@ export function SettingsScreen({ navigation }: Props) {
                                         onValueChange={(v) => updateAccountField('studyLevel', v as string)}
                                         style={{ color: colors.text }}
                                     >
-                                        <Picker.Item label={language === 'pl' ? 'Wybierz poziom' : 'Select level'} value="" />
-                                        <Picker.Item label={language === 'pl' ? 'Inżynierskie (I stopień)' : 'Bachelor (1st degree)'} value="engineer" />
-                                        <Picker.Item label={language === 'pl' ? 'Magisterskie (II stopień)' : 'Master (2nd degree)'} value="master" />
-                                        <Picker.Item label={language === 'pl' ? 'Jednolite magisterskie' : 'Unified Master'} value="unified" />
-                                        <Picker.Item label={language === 'pl' ? 'Doktoranckie' : 'Doctoral'} value="doctoral" />
+                                        {studyLevelOptions.map(opt => (
+                                            <Picker.Item key={opt.value} label={opt.label} value={opt.value} />
+                                        ))}
                                     </Picker>
                                 </View>
                             </View>
