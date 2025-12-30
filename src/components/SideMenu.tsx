@@ -359,7 +359,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                     style={styles.menuItem}
                                     onPress={() => navigateTo('Archives')}
                                 >
-                                    <Text style={[styles.menuItemIcon, { color: colors.text }]}>📦</Text>
+                                    <Text style={[styles.menuItemIcon, { color: colors.text }]}>🗄️</Text>
                                     <Text style={[styles.menuItemText, { color: colors.text }]}>
                                         {language === 'pl' ? 'Archiwum' : 'Archives'}
                                     </Text>
@@ -371,7 +371,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                 style={styles.menuItem}
                                 onPress={() => navigateTo('Help')}
                             >
-                                <Text style={[styles.menuItemIcon, { color: colors.text }]}>ⓘ</Text>
+                                <Text style={[styles.menuItemIcon, { color: colors.text }]}>❓</Text>
                                 <Text style={[styles.menuItemText, { color: colors.text }]}>
                                     {language === 'pl' ? 'O aplikacji' : 'About'}
                                 </Text>
@@ -454,7 +454,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                             style={styles.actionMenuItem}
                             onPress={handleArchiveSession}
                         >
-                            <Text style={[styles.actionMenuIcon, { color: colors.text }]}>📦</Text>
+                            <Text style={[styles.actionMenuIcon, { color: colors.text }]}>🗄️</Text>
                             <Text style={[styles.actionMenuText, { color: colors.text }]}>
                                 {language === 'pl' ? 'Archiwizuj' : 'Archive'}
                             </Text>
