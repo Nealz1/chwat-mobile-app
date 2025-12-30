@@ -82,6 +82,7 @@ export function SettingsScreen({ navigation }: Props) {
     const loadAccountInfo = async () => {
         try {
             const preferences = await authService.getAccountPreferences();
+            console.log('Loaded preferences:', JSON.stringify(preferences, null, 2));
             if (preferences?.preferences) {
                 const prefs = preferences.preferences;
                 setAccountInfo(prev => ({
@@ -345,16 +346,31 @@ export function SettingsScreen({ navigation }: Props) {
 
                             <View style={styles.inputRow}>
                                 <Text style={[styles.inputLabel, { color: colors.text }]}>Email</Text>
-                                <TextInput
-                                    style={[styles.input, { color: colors.text, backgroundColor: colors.background }]}
-                                    value={accountInfo.email}
-                                    onChangeText={(v) => updateAccountField('email', v)}
-                                    placeholder={language === 'pl' ? 'Nazwa użytkownika email' : 'Email username'}
-                                    placeholderTextColor={colors.textSecondary}
-                                    autoCapitalize="none"
-                                    keyboardType="email-address"
-                                />
+                                <View style={styles.emailContainer}>
+                                    <TextInput
+                                        style={[styles.emailInput, { color: colors.text, backgroundColor: colors.background }]}
+                                        value={accountInfo.email}
+                                        onChangeText={(v) => updateAccountField('email', v)}
+                                        placeholder={language === 'pl' ? 'nazwa.użytkownika' : 'username'}
+                                        placeholderTextColor={colors.textSecondary}
+                                        autoCapitalize="none"
+                                    />
+                                    <Text style={[styles.emailDomain, { color: colors.textSecondary }]}>
+                                        @student.wat.edu.pl
+                                    </Text>
+                                </View>
                             </View>
+
+                            {accountInfo.email && (
+                                <View style={styles.inputRow}>
+                                    <Text style={[styles.inputLabel, { color: colors.text }]}>
+                                        {language === 'pl' ? 'Pełny Email' : 'Full Email'}
+                                    </Text>
+                                    <Text style={[styles.fullEmailText, { color: colors.text }]}>
+                                        {accountInfo.email}@student.wat.edu.pl
+                                    </Text>
+                                </View>
+                            )}
                         </View>
 
                         {/* Academic Info */}
@@ -633,5 +649,23 @@ const styles = StyleSheet.create({
     pickerContainer: {
         borderRadius: 8,
         overflow: 'hidden',
+    },
+    emailContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    emailInput: {
+        flex: 1,
+        padding: 12,
+        borderRadius: 8,
+        fontSize: 16,
+    },
+    emailDomain: {
+        fontSize: 14,
+        marginLeft: 4,
+    },
+    fullEmailText: {
+        fontSize: 15,
+        padding: 12,
     },
 });
