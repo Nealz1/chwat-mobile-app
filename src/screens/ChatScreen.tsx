@@ -28,6 +28,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { BackgroundLogo } from '../components/BackgroundLogo';
 import { SideMenu } from '../components/SideMenu';
+import { Ionicons } from '@expo/vector-icons';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
 
@@ -541,9 +542,11 @@ export function ChatScreen({ route, navigation }: Props) {
                             onPress={handleVoiceRecord}
                             disabled={isLoading}
                         >
-                            <Text style={[styles.inputActionIcon, { color: isRecording ? colors.error : colors.textSecondary }]}>
-                                {isRecording ? '⏹' : '🎤'}
-                            </Text>
+                            <Ionicons
+                                name={isRecording ? "stop-circle" : "mic-outline"}
+                                size={24}
+                                color={isRecording ? colors.error : colors.textSecondary}
+                            />
                         </TouchableOpacity>
 
                         {/* Send button */}
@@ -555,7 +558,7 @@ export function ChatScreen({ route, navigation }: Props) {
                             onPress={handleSend}
                             disabled={!inputText.trim() || isLoading}
                         >
-                            <Text style={styles.sendButtonText}>➤</Text>
+                            <Ionicons name="send" size={20} color="#FFFFFF" />
                         </TouchableOpacity>
                     </View>
                 </View>

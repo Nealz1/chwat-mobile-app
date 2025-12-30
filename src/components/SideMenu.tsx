@@ -19,6 +19,7 @@ import { authService } from '../services/authService';
 import type { ChatSession, User } from '../types';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { Ionicons } from '@expo/vector-icons';
 
 const DRAWER_WIDTH = Dimensions.get('window').width * 0.85;
 
@@ -347,7 +348,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                 style={styles.menuItem}
                                 onPress={() => navigateTo('Settings')}
                             >
-                                <Text style={[styles.menuItemIcon, { color: colors.text }]}>⚙</Text>
+                                <Ionicons name="settings-outline" size={20} color={colors.text} style={styles.menuItemIcon} />
                                 <Text style={[styles.menuItemText, { color: colors.text }]}>
                                     {language === 'pl' ? 'Ustawienia' : 'Settings'}
                                 </Text>
@@ -359,7 +360,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                     style={styles.menuItem}
                                     onPress={() => navigateTo('Archives')}
                                 >
-                                    <Text style={[styles.menuItemIcon, { color: colors.text }]}>🗄️</Text>
+                                    <Ionicons name="archive-outline" size={20} color={colors.text} style={styles.menuItemIcon} />
                                     <Text style={[styles.menuItemText, { color: colors.text }]}>
                                         {language === 'pl' ? 'Archiwum' : 'Archives'}
                                     </Text>
@@ -371,7 +372,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                 style={styles.menuItem}
                                 onPress={() => navigateTo('Help')}
                             >
-                                <Text style={[styles.menuItemIcon, { color: colors.text }]}>❓</Text>
+                                <Ionicons name="help-circle-outline" size={20} color={colors.text} style={styles.menuItemIcon} />
                                 <Text style={[styles.menuItemText, { color: colors.text }]}>
                                     {language === 'pl' ? 'O aplikacji' : 'About'}
                                 </Text>
@@ -387,7 +388,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                         onClose();
                                     }}
                                 >
-                                    <Text style={[styles.menuItemIcon, { color: colors.text }]}>⇥</Text>
+                                    <Ionicons name="log-out-outline" size={20} color={colors.text} style={styles.menuItemIcon} />
                                     <Text style={[styles.menuItemText, { color: colors.text }]}>
                                         {language === 'pl' ? 'Wyloguj' : 'Logout'}
                                     </Text>
@@ -397,7 +398,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                     style={styles.menuItem}
                                     onPress={() => navigateTo('Login')}
                                 >
-                                    <Text style={[styles.menuItemIcon, { color: colors.text }]}>⇤</Text>
+                                    <Ionicons name="log-in-outline" size={20} color={colors.text} style={styles.menuItemIcon} />
                                     <Text style={[styles.menuItemText, { color: colors.text }]}>
                                         {language === 'pl' ? 'Zaloguj się' : 'Login'}
                                     </Text>
@@ -429,7 +430,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                             style={styles.actionMenuItem}
                             onPress={handleRenameSession}
                         >
-                            <Text style={[styles.actionMenuIcon, { color: colors.text }]}>✎</Text>
+                            <Ionicons name="pencil-outline" size={18} color={colors.text} style={styles.actionMenuIcon} />
                             <Text style={[styles.actionMenuText, { color: colors.text }]}>
                                 {language === 'pl' ? 'Zmień nazwę' : 'Rename'}
                             </Text>
@@ -439,9 +440,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                             style={styles.actionMenuItem}
                             onPress={handlePinSession}
                         >
-                            <Text style={[styles.actionMenuIcon, { color: colors.text }]}>
-                                {selectedSession?.is_pinned ? '📌' : '📍'}
-                            </Text>
+                            <Ionicons name={selectedSession?.is_pinned ? "pin" : "pin-outline"} size={18} color={colors.text} style={styles.actionMenuIcon} />
                             <Text style={[styles.actionMenuText, { color: colors.text }]}>
                                 {selectedSession?.is_pinned
                                     ? (language === 'pl' ? 'Odepnij' : 'Unpin')
@@ -454,7 +453,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                             style={styles.actionMenuItem}
                             onPress={handleArchiveSession}
                         >
-                            <Text style={[styles.actionMenuIcon, { color: colors.text }]}>🗄️</Text>
+                            <Ionicons name="archive-outline" size={18} color={colors.text} style={styles.actionMenuIcon} />
                             <Text style={[styles.actionMenuText, { color: colors.text }]}>
                                 {language === 'pl' ? 'Archiwizuj' : 'Archive'}
                             </Text>
@@ -464,7 +463,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                             style={styles.actionMenuItem}
                             onPress={handleMoveToGroupOpen}
                         >
-                            <Text style={[styles.actionMenuIcon, { color: colors.text }]}>📁</Text>
+                            <Ionicons name="folder-outline" size={18} color={colors.text} style={styles.actionMenuIcon} />
                             <Text style={[styles.actionMenuText, { color: colors.text }]}>
                                 {language === 'pl' ? 'Przenieś do grupy' : 'Move to group'}
                             </Text>
@@ -474,7 +473,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                             style={styles.actionMenuItem}
                             onPress={handleExportSession}
                         >
-                            <Text style={[styles.actionMenuIcon, { color: colors.text }]}>📤</Text>
+                            <Ionicons name="share-outline" size={18} color={colors.text} style={styles.actionMenuIcon} />
                             <Text style={[styles.actionMenuText, { color: colors.text }]}>
                                 {language === 'pl' ? 'Eksportuj' : 'Export'}
                             </Text>
@@ -484,7 +483,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                             style={styles.actionMenuItem}
                             onPress={handleDeleteSession}
                         >
-                            <Text style={[styles.actionMenuIcon, { color: colors.error }]}>🗑</Text>
+                            <Ionicons name="trash-outline" size={18} color={colors.error} style={styles.actionMenuIcon} />
                             <Text style={[styles.actionMenuText, { color: colors.error }]}>
                                 {language === 'pl' ? 'Usuń' : 'Delete'}
                             </Text>
