@@ -449,7 +449,7 @@ export function ChatScreen({ route, navigation }: Props) {
             <View style={[
                 styles.messageContainer,
                 item.sender === 'user' ? styles.userMessage : styles.botMessage,
-                { backgroundColor: item.sender === 'user' ? colors.primary : 'transparent' }
+                { backgroundColor: item.sender === 'user' ? (isDark ? '#3A3A3A' : '#E5E5E5') : 'transparent' }
             ]}>
                 {item.isLoading ? (
                     <ActivityIndicator color={colors.text} size="small" />
@@ -457,7 +457,7 @@ export function ChatScreen({ route, navigation }: Props) {
                     <>
                         <Markdown style={{
                             body: {
-                                color: item.sender === 'user' ? '#FFFFFF' : colors.text,
+                                color: colors.text,
                                 fontSize: 16,
                             },
                             code_inline: {
@@ -479,7 +479,7 @@ export function ChatScreen({ route, navigation }: Props) {
                                 style={styles.actionButton}
                                 onPress={() => handleCopyMessage(item.text)}
                             >
-                                <Text style={[styles.actionIcon, { color: item.sender === 'user' ? '#FFFFFF99' : colors.textSecondary }]}>⎘</Text>
+                                <Text style={[styles.actionIcon, { color: colors.textSecondary }]}>⎘</Text>
                             </TouchableOpacity>
                             {item.sender === 'user' && (
                                 <TouchableOpacity
@@ -487,7 +487,7 @@ export function ChatScreen({ route, navigation }: Props) {
                                     onPress={() => handleStartEdit(index, item.text)}
                                     disabled={isLoading}
                                 >
-                                    <Text style={[styles.actionIcon, { color: '#FFFFFF99' }]}>✎</Text>
+                                    <Text style={[styles.actionIcon, { color: colors.textSecondary }]}>✎</Text>
                                 </TouchableOpacity>
                             )}
                             {item.sender === 'bot' && index > 0 && (
