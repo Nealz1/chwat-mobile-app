@@ -67,6 +67,23 @@ export function ChatScreen({ route, navigation }: Props) {
         insertGroupSuggestion,
     } = useGroupAutocomplete();
 
+    // Keyboard listeners for Android (keyboardHeight state already declared above)
+
+    useEffect(() => {
+        const showSub = Keyboard.addListener(
+            Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+            (e) => setKeyboardHeight(e.endCoordinates.height)
+        );
+        const hideSub = Keyboard.addListener(
+            Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+            () => setKeyboardHeight(0)
+        );
+        return () => {
+            showSub.remove();
+            hideSub.remove();
+        };
+    }, []);
+
     useEffect(() => {
         loadUser();
         loadDraft();
@@ -646,7 +663,7 @@ export function ChatScreen({ route, navigation }: Props) {
     }, [colors, isDark, handleCopyMessage, handleRegenerateResponse, handleStartEdit, handleFeedback, handleSpeak, handleNavigateVersion, isLoading, user, messages]);
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
             <BackgroundLogo />
             <SideMenu
                 visible={menuVisible}
@@ -655,7 +672,7 @@ export function ChatScreen({ route, navigation }: Props) {
             />
             <KeyboardAvoidingView
                 style={styles.container}
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                behavior="padding"
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
             >
                 {/* Messages List */}
@@ -663,15 +680,21 @@ export function ChatScreen({ route, navigation }: Props) {
                     data={messages}
                     renderItem={renderMessage}
                     keyExtractor={(_, index) => index.toString()}
-                    contentContainerStyle={styles.messagesList}
+                    contentContainerStyle={[styles.messagesList, { paddingBottom: 80 + keyboardHeight }]}
                     inverted={false}
                     keyboardShouldPersistTaps="handled"
                 />
 
-                {/* Input Area */}
+                {/* Input Area - Positioned at bottom */}
                 <View style={[
                     styles.inputContainer,
-                    { backgroundColor: colors.surface }
+                    {
+                        backgroundColor: colors.surface,
+                        position: 'absolute',
+                        left: 0,
+                        right: 0,
+                        bottom: keyboardHeight > 0 ? keyboardHeight + 50 : 20,
+                    }
                 ]}>
                     {/* Attached file indicator */}
                     {attachedFile && (
