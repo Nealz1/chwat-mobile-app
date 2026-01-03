@@ -590,26 +590,26 @@ export function ChatScreen({ route, navigation }: Props) {
                                     <TouchableOpacity
                                         style={styles.versionButton}
                                         onPress={() => handleNavigateVersion(index, 'prev')}
-                                        disabled={(item.currentIndex ?? 0) <= 0}
+                                        disabled={(item.currentIndex ?? 1) <= 1}
                                     >
                                         <Ionicons
                                             name="chevron-back"
                                             size={14}
-                                            color={(item.currentIndex ?? 0) <= 0 ? colors.border : colors.textSecondary}
+                                            color={(item.currentIndex ?? 1) <= 1 ? colors.border : colors.textSecondary}
                                         />
                                     </TouchableOpacity>
                                     <Text style={[styles.versionText, { color: colors.textSecondary }]}>
-                                        {(item.currentIndex ?? 0) + 1}/{item.siblingCount}
+                                        {item.currentIndex ?? 1}/{item.siblingCount}
                                     </Text>
                                     <TouchableOpacity
                                         style={styles.versionButton}
                                         onPress={() => handleNavigateVersion(index, 'next')}
-                                        disabled={(item.currentIndex ?? 0) >= (item.siblingCount ?? 1) - 1}
+                                        disabled={(item.currentIndex ?? 1) >= (item.siblingCount ?? 1)}
                                     >
                                         <Ionicons
                                             name="chevron-forward"
                                             size={14}
-                                            color={(item.currentIndex ?? 0) >= (item.siblingCount ?? 1) - 1 ? colors.border : colors.textSecondary}
+                                            color={(item.currentIndex ?? 1) >= (item.siblingCount ?? 1) ? colors.border : colors.textSecondary}
                                         />
                                     </TouchableOpacity>
                                 </View>
