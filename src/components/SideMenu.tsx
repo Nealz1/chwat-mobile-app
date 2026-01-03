@@ -280,7 +280,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                 style={[styles.outlinedButton, { borderColor }]}
                                 onPress={() => navigateTo('Groups')}
                             >
-                                <Text style={[styles.buttonIcon, { color: colors.text }]}>▤</Text>
+                                <Ionicons name="folder-outline" size={18} color={colors.text} />
                                 <Text style={[styles.outlinedButtonText, { color: colors.text }]}>
                                     {language === 'pl' ? 'Grupy' : 'Groups'}
                                 </Text>
