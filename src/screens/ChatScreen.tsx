@@ -479,7 +479,7 @@ export function ChatScreen({ route, navigation }: Props) {
                                 style={styles.actionButton}
                                 onPress={() => handleCopyMessage(item.text)}
                             >
-                                <Text style={[styles.actionIcon, { color: colors.textSecondary }]}>⎘</Text>
+                                <Ionicons name="copy-outline" size={16} color={colors.textSecondary} />
                             </TouchableOpacity>
                             {item.sender === 'user' && (
                                 <TouchableOpacity
@@ -487,7 +487,7 @@ export function ChatScreen({ route, navigation }: Props) {
                                     onPress={() => handleStartEdit(index, item.text)}
                                     disabled={isLoading}
                                 >
-                                    <Text style={[styles.actionIcon, { color: colors.textSecondary }]}>✎</Text>
+                                    <Ionicons name="pencil-outline" size={16} color={colors.textSecondary} />
                                 </TouchableOpacity>
                             )}
                             {item.sender === 'bot' && index > 0 && (
@@ -496,7 +496,7 @@ export function ChatScreen({ route, navigation }: Props) {
                                     onPress={() => handleRegenerateResponse(index)}
                                     disabled={isLoading}
                                 >
-                                    <Text style={[styles.actionIcon, { color: colors.textSecondary }]}>↻</Text>
+                                    <Ionicons name="refresh-outline" size={16} color={colors.textSecondary} />
                                 </TouchableOpacity>
                             )}
                             {item.sender === 'bot' && (
@@ -504,7 +504,7 @@ export function ChatScreen({ route, navigation }: Props) {
                                     style={styles.actionButton}
                                     onPress={() => handleSpeak(item.text)}
                                 >
-                                    <Text style={[styles.actionIcon, { color: colors.textSecondary }]}>◀))</Text>
+                                    <Ionicons name="volume-high-outline" size={16} color={colors.textSecondary} />
                                 </TouchableOpacity>
                             )}
                             {item.sender === 'bot' && index > 0 && (
@@ -512,7 +512,7 @@ export function ChatScreen({ route, navigation }: Props) {
                                     style={styles.actionButton}
                                     onPress={() => handleExplain(index)}
                                 >
-                                    <Text style={[styles.actionIcon, { color: colors.textSecondary }]}>🔍</Text>
+                                    <Ionicons name="search-outline" size={16} color={colors.textSecondary} />
                                 </TouchableOpacity>
                             )}
                             {item.sender === 'bot' && item.nodeId && user && (
@@ -521,13 +521,13 @@ export function ChatScreen({ route, navigation }: Props) {
                                         style={styles.actionButton}
                                         onPress={() => handleFeedback(item.nodeId!, 'positive')}
                                     >
-                                        <Text style={[styles.actionIcon, { color: item.feedback === 'positive' ? colors.primary : colors.textSecondary }]}>↑</Text>
+                                        <Ionicons name="thumbs-up-outline" size={16} color={item.feedback === 'positive' ? colors.primary : colors.textSecondary} />
                                     </TouchableOpacity>
                                     <TouchableOpacity
                                         style={styles.actionButton}
                                         onPress={() => handleFeedback(item.nodeId!, 'negative')}
                                     >
-                                        <Text style={[styles.actionIcon, { color: item.feedback === 'negative' ? '#FF4444' : colors.textSecondary }]}>↓</Text>
+                                        <Ionicons name="thumbs-down-outline" size={16} color={item.feedback === 'negative' ? '#FF4444' : colors.textSecondary} />
                                     </TouchableOpacity>
                                 </>
                             )}
@@ -734,17 +734,16 @@ const styles = StyleSheet.create({
     },
     messageContainer: {
         maxWidth: '85%',
-        padding: 12,
-        borderRadius: 16,
+        padding: 14,
+        paddingHorizontal: 18,
+        borderRadius: 20,
         marginBottom: 8,
     },
     userMessage: {
         alignSelf: 'flex-end',
-        borderBottomRightRadius: 4,
     },
     botMessage: {
         alignSelf: 'flex-start',
-        borderBottomLeftRadius: 4,
     },
     inputContainer: {
         flexDirection: 'column',
