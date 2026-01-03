@@ -696,7 +696,7 @@ export function ChatScreen({ route, navigation }: Props) {
                         position: 'absolute',
                         left: 0,
                         right: 0,
-                        bottom: 0,
+                        bottom: keyboardHeight > 0 ? keyboardHeight : 0,
                         paddingBottom: keyboardHeight > 0 ? 50 : 35,
                     }
                 ]}>
