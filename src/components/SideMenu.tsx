@@ -15,6 +15,7 @@ import {
     Share,
 } from 'react-native';
 import { chatService } from '../services/chatService';
+import { groupsService } from '../services/groupsService';
 import { authService } from '../services/authService';
 import type { ChatSession, User } from '../types';
 import { useTheme } from '../contexts/ThemeContext';
@@ -64,7 +65,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
         setUser(currentUser);
         if (currentUser) {
             await loadSessions();
-            const groupsList = await chatService.getGroups();
+            const groupsList = await groupsService.getGroups();
             console.log('Loaded groups:', groupsList);
             setGroups(groupsList);
         }
