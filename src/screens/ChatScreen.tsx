@@ -18,6 +18,7 @@ import * as Clipboard from 'expo-clipboard';
 import * as Speech from 'expo-speech';
 import * as DocumentPicker from 'expo-document-picker';
 import { useAudioRecorder, AudioModule, RecordingPresets } from 'expo-audio';
+import * as Haptics from 'expo-haptics';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Markdown from 'react-native-markdown-display';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -172,6 +173,9 @@ export function ChatScreen({ route, navigation }: Props) {
     const handleSend = useCallback(async () => {
         if (!inputText.trim() || isLoading) return;
 
+        // Haptic feedback on send
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
         const userMessage: Message = { sender: 'user', text: inputText.trim() };
         setMessages(prev => [...prev, userMessage]);
         setInputText('');
@@ -235,6 +239,7 @@ export function ChatScreen({ route, navigation }: Props) {
     }, [t]);
 
     const handleCopyMessage = useCallback(async (text: string) => {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         await Clipboard.setStringAsync(text);
         Alert.alert('✓', t.chat?.copied || 'Skopiowano do schowka');
     }, [t]);

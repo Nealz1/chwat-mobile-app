@@ -13,7 +13,9 @@ import {
     ScrollView,
     Alert,
     Share,
+    RefreshControl,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { chatService } from '../services/chatService';
 import { groupsService } from '../services/groupsService';
 import { authService } from '../services/authService';
@@ -42,6 +44,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
     const [actionMenuVisible, setActionMenuVisible] = useState(false);
     const [groups, setGroups] = useState<{ id: number; name: string }[]>([]);
     const [groupPickerVisible, setGroupPickerVisible] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
 
     useEffect(() => {
         if (visible) {
@@ -82,6 +85,14 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
             console.error('Error loading sessions:', error);
         }
     };
+
+    // Pull-to-refresh handler with haptic feedback
+    const onRefresh = useCallback(async () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        setRefreshing(true);
+        await loadData();
+        setRefreshing(false);
+    }, []);
 
     const handleNewChat = () => {
         onClose();
@@ -257,7 +268,17 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                             <Text style={[styles.headerTitle, { color: colors.text }]}>HELPDesk</Text>
                         </View>
 
-                        <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                        <ScrollView
+                            style={styles.scrollContent}
+                            showsVerticalScrollIndicator={false}
+                            refreshControl={
+                                <RefreshControl
+                                    refreshing={refreshing}
+                                    onRefresh={onRefresh}
+                                    tintColor={colors.primary}
+                                />
+                            }
+                        >
                             {/* New Chat Button */}
                             <TouchableOpacity
                                 style={[styles.outlinedButton, { borderColor }]}
