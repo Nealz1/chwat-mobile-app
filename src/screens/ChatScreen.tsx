@@ -431,97 +431,112 @@ export function ChatScreen({ route, navigation }: Props) {
         setExplainModalVisible(true);
     }, [messages, language]);
 
-    const renderMessage = useCallback(({ item, index }: { item: Message; index: number }) => (
-        <View style={[
-            styles.messageContainer,
-            item.sender === 'user' ? styles.userMessage : styles.botMessage,
-            { backgroundColor: item.sender === 'user' ? colors.primary : colors.surfaceAlt }
-        ]}>
-            {item.isLoading ? (
-                <ActivityIndicator color={colors.text} size="small" />
-            ) : (
-                <>
-                    <Markdown style={{
-                        body: {
-                            color: item.sender === 'user' ? '#FFFFFF' : colors.text,
-                            fontSize: 16,
-                        },
-                        code_inline: {
-                            backgroundColor: isDark ? '#2D2D2D' : '#F0F0F0',
-                            borderRadius: 4,
-                            paddingHorizontal: 4,
-                        },
-                        code_block: {
-                            backgroundColor: isDark ? '#1E1E1E' : '#F5F5F5',
-                            borderRadius: 8,
-                            padding: 12,
-                        },
-                    }}>
+    const renderMessage = useCallback(({ item, index }: { item: Message; index: number }) => {
+        // Welcome message (first message when no chat history) - centered, no bubble
+        const isWelcomeMessage = index === 0 && messages.length === 1 && item.sender === 'bot';
+
+        if (isWelcomeMessage) {
+            return (
+                <View style={styles.welcomeMessageContainer}>
+                    <Text style={[styles.welcomeMessageText, { color: colors.text }]}>
                         {item.text}
-                    </Markdown>
-                    {/* Action buttons */}
-                    <View style={styles.messageActions}>
-                        <TouchableOpacity
-                            style={styles.actionButton}
-                            onPress={() => handleCopyMessage(item.text)}
-                        >
-                            <Text style={[styles.actionIcon, { color: item.sender === 'user' ? '#FFFFFF99' : colors.textSecondary }]}>⎘</Text>
-                        </TouchableOpacity>
-                        {item.sender === 'user' && (
+                    </Text>
+                </View>
+            );
+        }
+
+        return (
+            <View style={[
+                styles.messageContainer,
+                item.sender === 'user' ? styles.userMessage : styles.botMessage,
+                { backgroundColor: item.sender === 'user' ? colors.primary : 'transparent' }
+            ]}>
+                {item.isLoading ? (
+                    <ActivityIndicator color={colors.text} size="small" />
+                ) : (
+                    <>
+                        <Markdown style={{
+                            body: {
+                                color: item.sender === 'user' ? '#FFFFFF' : colors.text,
+                                fontSize: 16,
+                            },
+                            code_inline: {
+                                backgroundColor: isDark ? '#2D2D2D' : '#F0F0F0',
+                                borderRadius: 4,
+                                paddingHorizontal: 4,
+                            },
+                            code_block: {
+                                backgroundColor: isDark ? '#1E1E1E' : '#F5F5F5',
+                                borderRadius: 8,
+                                padding: 12,
+                            },
+                        }}>
+                            {item.text}
+                        </Markdown>
+                        {/* Action buttons */}
+                        <View style={styles.messageActions}>
                             <TouchableOpacity
                                 style={styles.actionButton}
-                                onPress={() => handleStartEdit(index, item.text)}
-                                disabled={isLoading}
+                                onPress={() => handleCopyMessage(item.text)}
                             >
-                                <Text style={[styles.actionIcon, { color: '#FFFFFF99' }]}>✎</Text>
+                                <Text style={[styles.actionIcon, { color: item.sender === 'user' ? '#FFFFFF99' : colors.textSecondary }]}>⎘</Text>
                             </TouchableOpacity>
-                        )}
-                        {item.sender === 'bot' && index > 0 && (
-                            <TouchableOpacity
-                                style={styles.actionButton}
-                                onPress={() => handleRegenerateResponse(index)}
-                                disabled={isLoading}
-                            >
-                                <Text style={[styles.actionIcon, { color: colors.textSecondary }]}>↻</Text>
-                            </TouchableOpacity>
-                        )}
-                        {item.sender === 'bot' && (
-                            <TouchableOpacity
-                                style={styles.actionButton}
-                                onPress={() => handleSpeak(item.text)}
-                            >
-                                <Text style={[styles.actionIcon, { color: colors.textSecondary }]}>◀))</Text>
-                            </TouchableOpacity>
-                        )}
-                        {item.sender === 'bot' && index > 0 && (
-                            <TouchableOpacity
-                                style={styles.actionButton}
-                                onPress={() => handleExplain(index)}
-                            >
-                                <Text style={[styles.actionIcon, { color: colors.textSecondary }]}>🔍</Text>
-                            </TouchableOpacity>
-                        )}
-                        {item.sender === 'bot' && item.nodeId && user && (
-                            <>
+                            {item.sender === 'user' && (
                                 <TouchableOpacity
                                     style={styles.actionButton}
-                                    onPress={() => handleFeedback(item.nodeId!, 'positive')}
+                                    onPress={() => handleStartEdit(index, item.text)}
+                                    disabled={isLoading}
                                 >
-                                    <Text style={[styles.actionIcon, { color: item.feedback === 'positive' ? colors.primary : colors.textSecondary }]}>↑</Text>
+                                    <Text style={[styles.actionIcon, { color: '#FFFFFF99' }]}>✎</Text>
                                 </TouchableOpacity>
+                            )}
+                            {item.sender === 'bot' && index > 0 && (
                                 <TouchableOpacity
                                     style={styles.actionButton}
-                                    onPress={() => handleFeedback(item.nodeId!, 'negative')}
+                                    onPress={() => handleRegenerateResponse(index)}
+                                    disabled={isLoading}
                                 >
-                                    <Text style={[styles.actionIcon, { color: item.feedback === 'negative' ? '#FF4444' : colors.textSecondary }]}>↓</Text>
+                                    <Text style={[styles.actionIcon, { color: colors.textSecondary }]}>↻</Text>
                                 </TouchableOpacity>
-                            </>
-                        )}
-                    </View>
-                </>
-            )}
-        </View>
-    ), [colors, isDark, handleCopyMessage, handleRegenerateResponse, handleStartEdit, handleFeedback, handleSpeak, isLoading, user]);
+                            )}
+                            {item.sender === 'bot' && (
+                                <TouchableOpacity
+                                    style={styles.actionButton}
+                                    onPress={() => handleSpeak(item.text)}
+                                >
+                                    <Text style={[styles.actionIcon, { color: colors.textSecondary }]}>◀))</Text>
+                                </TouchableOpacity>
+                            )}
+                            {item.sender === 'bot' && index > 0 && (
+                                <TouchableOpacity
+                                    style={styles.actionButton}
+                                    onPress={() => handleExplain(index)}
+                                >
+                                    <Text style={[styles.actionIcon, { color: colors.textSecondary }]}>🔍</Text>
+                                </TouchableOpacity>
+                            )}
+                            {item.sender === 'bot' && item.nodeId && user && (
+                                <>
+                                    <TouchableOpacity
+                                        style={styles.actionButton}
+                                        onPress={() => handleFeedback(item.nodeId!, 'positive')}
+                                    >
+                                        <Text style={[styles.actionIcon, { color: item.feedback === 'positive' ? colors.primary : colors.textSecondary }]}>↑</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={styles.actionButton}
+                                        onPress={() => handleFeedback(item.nodeId!, 'negative')}
+                                    >
+                                        <Text style={[styles.actionIcon, { color: item.feedback === 'negative' ? '#FF4444' : colors.textSecondary }]}>↓</Text>
+                                    </TouchableOpacity>
+                                </>
+                            )}
+                        </View>
+                    </>
+                )}
+            </View>
+        );
+    }, [colors, isDark, handleCopyMessage, handleRegenerateResponse, handleStartEdit, handleFeedback, handleSpeak, isLoading, user, messages]);
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -704,6 +719,18 @@ const styles = StyleSheet.create({
     messagesList: {
         padding: 16,
         paddingBottom: 8,
+    },
+    welcomeMessageContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 32,
+        paddingHorizontal: 24,
+    },
+    welcomeMessageText: {
+        fontSize: 20,
+        fontWeight: '500',
+        textAlign: 'center',
+        lineHeight: 28,
     },
     messageContainer: {
         maxWidth: '85%',
