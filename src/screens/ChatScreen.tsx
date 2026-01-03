@@ -28,9 +28,12 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { BackgroundLogo } from '../components/BackgroundLogo';
 import { SideMenu } from '../components/SideMenu';
+import { MessageItem } from '../components/MessageItem';
+import { ChatInput } from '../components/ChatInput';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { STORAGE_KEYS, API_BASE_URL } from '../config/constants';
+import { STORAGE_KEYS } from '../config/constants';
+import { useGroupAutocomplete } from '../hooks/useGroupAutocomplete';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
 
@@ -56,9 +59,14 @@ export function ChatScreen({ route, navigation }: Props) {
     const [explainModalVisible, setExplainModalVisible] = useState(false);
     const [explainText, setExplainText] = useState('');
     const abortControllerRef = useRef<AbortController | null>(null);
-    const [groupSuggestions, setGroupSuggestions] = useState<string[]>([]);
-    const [showGroupAutocomplete, setShowGroupAutocomplete] = useState(false);
-    const groupSearchTimeout = useRef<NodeJS.Timeout | null>(null);
+
+    // Use group autocomplete hook
+    const {
+        groupSuggestions,
+        showGroupAutocomplete,
+        handleInputChange: handleGroupInputChange,
+        insertGroupSuggestion,
+    } = useGroupAutocomplete();
 
     useEffect(() => {
         loadUser();
@@ -472,66 +480,15 @@ export function ChatScreen({ route, navigation }: Props) {
         });
     }, [language]);
 
-    // Detect WCY pattern for group autocomplete
-    const detectGroupPattern = useCallback((text: string): string | null => {
-        const match = text.match(/(?:^|\s)([Ww][Cc][Yy][a-zA-Z0-9]*)$/);
-        return match ? match[1].toUpperCase() : null;
-    }, []);
-
-    // Search groups by pattern
-    const searchGroups = useCallback(async (pattern: string) => {
-        try {
-            const headers = await authService.getAuthHeaders();
-            const response = await fetch(
-                `${API_BASE_URL}/api/groups/search?q=${encodeURIComponent(pattern)}&limit=5`,
-                { headers }
-            );
-            if (response.ok) {
-                const data = await response.json();
-                const groups = data.groups || [];
-                setGroupSuggestions(groups);
-                setShowGroupAutocomplete(groups.length > 0);
-            }
-        } catch (error) {
-            console.error('Error searching groups:', error);
-            setGroupSuggestions([]);
-            setShowGroupAutocomplete(false);
-        }
-    }, []);
-
-    // Handle input change with group pattern detection
+    // Handle input change with group autocomplete (using hook)
     const handleInputChange = useCallback((text: string) => {
-        setInputText(text);
+        handleGroupInputChange(text, setInputText);
+    }, [handleGroupInputChange]);
 
-        // Clear previous timeout
-        if (groupSearchTimeout.current) {
-            clearTimeout(groupSearchTimeout.current);
-        }
-
-        // Detect WCY pattern
-        const pattern = detectGroupPattern(text);
-        if (pattern && pattern.length >= 3) {
-            // Debounce search
-            groupSearchTimeout.current = setTimeout(() => {
-                searchGroups(pattern);
-            }, 300);
-        } else {
-            setGroupSuggestions([]);
-            setShowGroupAutocomplete(false);
-        }
-    }, [detectGroupPattern, searchGroups]);
-
-    // Insert selected group suggestion
-    const insertGroupSuggestion = useCallback((suggestion: string) => {
-        const match = inputText.match(/(?:^|\s)([Ww][Cc][Yy][a-zA-Z0-9]*)$/);
-        if (match) {
-            const patternStart = inputText.length - match[1].length;
-            const newText = inputText.substring(0, patternStart) + suggestion;
-            setInputText(newText);
-        }
-        setGroupSuggestions([]);
-        setShowGroupAutocomplete(false);
-    }, [inputText]);
+    // Handle inserting group suggestion
+    const handleInsertGroupSuggestion = useCallback((suggestion: string) => {
+        insertGroupSuggestion(suggestion, inputText, setInputText);
+    }, [insertGroupSuggestion, inputText]);
 
     // Explain Decision - find the user query that triggered this bot response
     const handleExplain = useCallback((botMsgIndex: number) => {
@@ -742,7 +699,7 @@ export function ChatScreen({ route, navigation }: Props) {
                                         <TouchableOpacity
                                             key={index}
                                             style={[styles.autocompleteItem, { borderBottomColor: colors.border }]}
-                                            onPress={() => insertGroupSuggestion(suggestion)}
+                                            onPress={() => handleInsertGroupSuggestion(suggestion)}
                                         >
                                             <Ionicons name="people-outline" size={16} color={colors.textSecondary} />
                                             <Text style={[styles.autocompleteText, { color: colors.text }]}>{suggestion}</Text>

@@ -117,6 +117,25 @@ class GroupsService {
             return false;
         }
     }
+
+    // Search groups by query (for autocomplete)
+    async searchGroups(query: string, limit: number = 5): Promise<string[]> {
+        try {
+            const headers = await authService.getAuthHeaders();
+            const response = await fetch(
+                `${API_BASE_URL}/api/groups/search?q=${encodeURIComponent(query)}&limit=${limit}`,
+                { headers }
+            );
+
+            if (!response.ok) return [];
+
+            const data = await response.json();
+            return data.groups || [];
+        } catch (error) {
+            console.error('Error searching groups:', error);
+            return [];
+        }
+    }
 }
 
 export const groupsService = new GroupsService();
