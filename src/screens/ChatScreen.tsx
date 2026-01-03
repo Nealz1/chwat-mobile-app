@@ -28,8 +28,6 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { BackgroundLogo } from '../components/BackgroundLogo';
 import { SideMenu } from '../components/SideMenu';
-import { MessageItem } from '../components/MessageItem';
-import { ChatInput } from '../components/ChatInput';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS } from '../config/constants';
