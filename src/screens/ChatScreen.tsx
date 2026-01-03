@@ -512,7 +512,7 @@ export function ChatScreen({ route, navigation }: Props) {
                                     style={styles.actionButton}
                                     onPress={() => handleExplain(index)}
                                 >
-                                    <Ionicons name="search-outline" size={16} color={colors.textSecondary} />
+                                    <Ionicons name="help-circle-outline" size={16} color={colors.textSecondary} />
                                 </TouchableOpacity>
                             )}
                             {item.sender === 'bot' && item.nodeId && user && (
