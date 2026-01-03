@@ -130,15 +130,31 @@ export function ChatScreen({ route, navigation }: Props) {
 
     const loadSessionMessages = async (sessionId: number) => {
         try {
-            const msgs = await chatService.getSessionMessages(sessionId);
-            const converted: Message[] = msgs.map(m => ({
-                sender: m.role === 'user' ? 'user' : 'bot',
-                text: m.content,
-                nodeId: m.node_id,
-            }));
-            setMessages(converted.length > 0 ? converted : [
-                { sender: 'bot', text: t.chat.welcomeMessage }
-            ]);
+            // Use conversation tree to get sibling info for version navigation
+            const tree = await chatService.getConversationTree(sessionId);
+            if (tree && tree.length > 0) {
+                const converted: Message[] = tree.map((node: any) => ({
+                    sender: node.role === 'user' ? 'user' : 'bot',
+                    text: node.content,
+                    nodeId: node.id,
+                    parentId: node.parent_id,
+                    siblingCount: node.sibling_count,
+                    currentIndex: node.current_index,
+                    feedback: node.feedback,
+                }));
+                setMessages(converted);
+            } else {
+                // Fallback to regular messages if tree is empty
+                const msgs = await chatService.getSessionMessages(sessionId);
+                const converted: Message[] = msgs.map(m => ({
+                    sender: m.role === 'user' ? 'user' : 'bot',
+                    text: m.content,
+                    nodeId: m.node_id,
+                }));
+                setMessages(converted.length > 0 ? converted : [
+                    { sender: 'bot', text: t.chat.welcomeMessage }
+                ]);
+            }
         } catch (error) {
             console.error('Error loading session messages:', error);
         }
@@ -332,6 +348,43 @@ export function ChatScreen({ route, navigation }: Props) {
             return msg;
         }));
     }, [user]);
+
+    // Handle version navigation (switch between message siblings)
+    const handleNavigateVersion = useCallback(async (index: number, direction: 'prev' | 'next') => {
+        if (!currentSessionId) return;
+
+        const message = messages[index];
+        if (!message || !message.nodeId || !message.siblingCount || message.siblingCount <= 1) return;
+
+        try {
+            setIsLoading(true);
+            const siblings = await chatService.getMessageSiblings(message.nodeId);
+            if (siblings.length <= 1) return;
+
+            const currentIdx = siblings.findIndex((s: any) => s.id === message.nodeId);
+            if (currentIdx === -1) return;
+
+            let newIdx = currentIdx;
+            if (direction === 'prev' && currentIdx > 0) {
+                newIdx = currentIdx - 1;
+            } else if (direction === 'next' && currentIdx < siblings.length - 1) {
+                newIdx = currentIdx + 1;
+            } else {
+                setIsLoading(false);
+                return;
+            }
+
+            const newSibling = siblings[newIdx];
+            const parentId = message.parentId ?? 0;
+
+            await chatService.setActiveVersion(currentSessionId, parentId, newSibling.id);
+            await loadSessionMessages(currentSessionId);
+        } catch (error) {
+            console.error('Error navigating version:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [currentSessionId, messages]);
 
     // Handle file attachment
     const handleAttachFile = useCallback(async () => {
@@ -531,12 +584,42 @@ export function ChatScreen({ route, navigation }: Props) {
                                     </TouchableOpacity>
                                 </>
                             )}
+                            {/* Version Navigator */}
+                            {item.siblingCount && item.siblingCount > 1 && (
+                                <View style={styles.versionNavigator}>
+                                    <TouchableOpacity
+                                        style={styles.versionButton}
+                                        onPress={() => handleNavigateVersion(index, 'prev')}
+                                        disabled={(item.currentIndex ?? 0) <= 0}
+                                    >
+                                        <Ionicons
+                                            name="chevron-back"
+                                            size={14}
+                                            color={(item.currentIndex ?? 0) <= 0 ? colors.border : colors.textSecondary}
+                                        />
+                                    </TouchableOpacity>
+                                    <Text style={[styles.versionText, { color: colors.textSecondary }]}>
+                                        {(item.currentIndex ?? 0) + 1}/{item.siblingCount}
+                                    </Text>
+                                    <TouchableOpacity
+                                        style={styles.versionButton}
+                                        onPress={() => handleNavigateVersion(index, 'next')}
+                                        disabled={(item.currentIndex ?? 0) >= (item.siblingCount ?? 1) - 1}
+                                    >
+                                        <Ionicons
+                                            name="chevron-forward"
+                                            size={14}
+                                            color={(item.currentIndex ?? 0) >= (item.siblingCount ?? 1) - 1 ? colors.border : colors.textSecondary}
+                                        />
+                                    </TouchableOpacity>
+                                </View>
+                            )}
                         </View>
                     </>
                 )}
             </View>
         );
-    }, [colors, isDark, handleCopyMessage, handleRegenerateResponse, handleStartEdit, handleFeedback, handleSpeak, isLoading, user, messages]);
+    }, [colors, isDark, handleCopyMessage, handleRegenerateResponse, handleStartEdit, handleFeedback, handleSpeak, handleNavigateVersion, isLoading, user, messages]);
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -871,5 +954,19 @@ const styles = StyleSheet.create({
         padding: 12,
         borderRadius: 8,
         lineHeight: 22,
+    },
+    versionNavigator: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginLeft: 12,
+        gap: 2,
+    },
+    versionButton: {
+        padding: 4,
+    },
+    versionText: {
+        fontSize: 12,
+        minWidth: 30,
+        textAlign: 'center',
     },
 });
