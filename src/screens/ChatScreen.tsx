@@ -510,19 +510,21 @@ export function ChatScreen({ route, navigation }: Props) {
         insertGroupSuggestion(suggestion, inputText, setInputText);
     }, [insertGroupSuggestion, inputText]);
 
-    // Explain Decision - find the user query that triggered this bot response
-    const handleExplain = useCallback((botMsgIndex: number) => {
-        // Find the preceding user message
-        for (let i = botMsgIndex - 1; i >= 0; i--) {
-            if (messages[i].sender === 'user') {
-                setExplainText(messages[i].text);
-                setExplainModalVisible(true);
-                return;
-            }
-        }
-        // No user message found
-        setExplainText(language === 'pl' ? 'Brak poprzedniego zapytania użytkownika' : 'No previous user query found');
+    // Explain Decision - call API to get explanation for this bot response
+    const handleExplain = useCallback(async (botMsgIndex: number) => {
+        const botMessage = messages[botMsgIndex];
+        if (!botMessage || botMessage.sender !== 'bot') return;
+
+        setExplainText(language === 'pl' ? 'Ładowanie...' : 'Loading...');
         setExplainModalVisible(true);
+
+        try {
+            const result = await authService.explainMessage(botMessage.text);
+            setExplainText(result.explanation || (language === 'pl' ? 'Brak wyjaśnienia' : 'No explanation available'));
+        } catch (error) {
+            console.error('Explain error:', error);
+            setExplainText(language === 'pl' ? 'Nie udało się pobrać wyjaśnienia' : 'Failed to get explanation');
+        }
     }, [messages, language]);
 
     const renderMessage = useCallback(({ item, index }: { item: Message; index: number }) => {

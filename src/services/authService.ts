@@ -147,6 +147,30 @@ class AuthService {
             return false;
         }
     }
+
+    async explainMessage(messageText: string): Promise<{ explanation: string; metrics?: any }> {
+        const token = await this.getToken();
+
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+        };
+
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const response = await fetch(`${API_BASE_URL}/explain`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ message: messageText }),
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to get explanation');
+        }
+
+        return await response.json();
+    }
 }
 
 export const authService = new AuthService();
