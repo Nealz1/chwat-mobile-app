@@ -342,6 +342,40 @@ class ChatService {
             return null;
         }
     }
+
+    // Search in messages across sessions
+    async searchInMessages(
+        sessions: ChatSession[],
+        query: string
+    ): Promise<{ sessionId: number; sessionTitle: string; matchedMessage: string; updatedAt: string }[]> {
+        const results: { sessionId: number; sessionTitle: string; matchedMessage: string; updatedAt: string }[] = [];
+        const lowerQuery = query.toLowerCase();
+
+        // Search each session's messages
+        const searchPromises = sessions.map(async (session) => {
+            try {
+                const messages = await this.getSessionMessages(session.id);
+                for (const msg of messages) {
+                    if (msg.content && msg.content.toLowerCase().includes(lowerQuery)) {
+                        return {
+                            sessionId: session.id,
+                            sessionTitle: session.title,
+                            matchedMessage: msg.content.slice(0, 100) + (msg.content.length > 100 ? '...' : ''),
+                            updatedAt: session.updated_at,
+                        };
+                    }
+                }
+            } catch (error) {
+                console.error(`Error searching session ${session.id}:`, error);
+            }
+            return null;
+        });
+
+        const allResults = await Promise.all(searchPromises);
+        allResults.forEach(r => { if (r) results.push(r); });
+
+        return results;
+    }
 }
 
 export const chatService = new ChatService();
