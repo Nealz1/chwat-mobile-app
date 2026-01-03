@@ -938,12 +938,16 @@ const styles = StyleSheet.create({
     },
     messageActions: {
         flexDirection: 'row',
-        justifyContent: 'flex-end',
-        marginTop: 8,
-        gap: 8,
+        justifyContent: 'flex-start',
+        marginTop: 12,
+        paddingTop: 8,
+        gap: 4,
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        width: '100%',
     },
     actionButton: {
-        padding: 4,
+        padding: 6,
     },
     actionIcon: {
         fontSize: 14,
