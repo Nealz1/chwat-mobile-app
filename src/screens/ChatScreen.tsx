@@ -29,6 +29,8 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { BackgroundLogo } from '../components/BackgroundLogo';
 import { SideMenu } from '../components/SideMenu';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { STORAGE_KEYS } from '../config/constants';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
 
@@ -53,10 +55,38 @@ export function ChatScreen({ route, navigation }: Props) {
     const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
     const [explainModalVisible, setExplainModalVisible] = useState(false);
     const [explainText, setExplainText] = useState('');
+    const abortControllerRef = useRef<AbortController | null>(null);
 
     useEffect(() => {
         loadUser();
+        loadDraft();
     }, []);
+
+    const loadDraft = async () => {
+        try {
+            const draft = await AsyncStorage.getItem(STORAGE_KEYS.DRAFT_MESSAGE || 'draft_message');
+            if (draft) setInputText(draft);
+        } catch (error) {
+            console.error('Error loading draft:', error);
+        }
+    };
+
+    // Save draft when input changes
+    useEffect(() => {
+        const saveDraft = async () => {
+            try {
+                if (inputText) {
+                    await AsyncStorage.setItem(STORAGE_KEYS.DRAFT_MESSAGE || 'draft_message', inputText);
+                } else {
+                    await AsyncStorage.removeItem(STORAGE_KEYS.DRAFT_MESSAGE || 'draft_message');
+                }
+            } catch (error) {
+                console.error('Error saving draft:', error);
+            }
+        };
+        const timeoutId = setTimeout(saveDraft, 500);
+        return () => clearTimeout(timeoutId);
+    }, [inputText]);
 
     // Keyboard listener for Android
     useEffect(() => {
@@ -152,8 +182,25 @@ export function ChatScreen({ route, navigation }: Props) {
             ]);
         } finally {
             setIsLoading(false);
+            abortControllerRef.current = null;
         }
     }, [inputText, isLoading, user, currentSessionId, t]);
+
+    const handleCancel = useCallback(() => {
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+            abortControllerRef.current = null;
+        }
+        setIsLoading(false);
+        // Remove the loading message
+        setMessages(prev => {
+            const lastMsg = prev[prev.length - 1];
+            if (lastMsg?.isLoading) {
+                return prev.slice(0, -1);
+            }
+            return prev;
+        });
+    }, []);
 
     const handleNewChat = useCallback(() => {
         setCurrentSessionId(undefined);
@@ -549,17 +596,26 @@ export function ChatScreen({ route, navigation }: Props) {
                             />
                         </TouchableOpacity>
 
-                        {/* Send button */}
-                        <TouchableOpacity
-                            style={[
-                                styles.sendButton,
-                                { backgroundColor: inputText.trim() ? colors.primary : colors.border }
-                            ]}
-                            onPress={handleSend}
-                            disabled={!inputText.trim() || isLoading}
-                        >
-                            <Ionicons name="send" size={20} color="#FFFFFF" />
-                        </TouchableOpacity>
+                        {/* Send/Cancel button */}
+                        {isLoading ? (
+                            <TouchableOpacity
+                                style={[styles.sendButton, { backgroundColor: colors.error }]}
+                                onPress={handleCancel}
+                            >
+                                <Ionicons name="stop" size={20} color="#FFFFFF" />
+                            </TouchableOpacity>
+                        ) : (
+                            <TouchableOpacity
+                                style={[
+                                    styles.sendButton,
+                                    { backgroundColor: inputText.trim() ? colors.primary : colors.border }
+                                ]}
+                                onPress={handleSend}
+                                disabled={!inputText.trim()}
+                            >
+                                <Ionicons name="send" size={20} color="#FFFFFF" />
+                            </TouchableOpacity>
+                        )}
                     </View>
                 </View>
             </KeyboardAvoidingView>
