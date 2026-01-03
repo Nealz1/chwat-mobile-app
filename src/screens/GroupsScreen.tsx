@@ -19,6 +19,7 @@ import { authService } from '../services/authService';
 import type { User, ChatSession } from '../types';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { Ionicons } from '@expo/vector-icons';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Groups'>;
 
@@ -120,7 +121,7 @@ export function GroupsScreen({ navigation }: Props) {
             onLongPress={() => handleDeleteGroup(item)}
         >
             <View style={styles.groupIcon}>
-                <Text style={styles.groupIconText}>📁</Text>
+                <Ionicons name="folder" size={24} color="#007AFF" />
             </View>
             <View style={styles.groupContent}>
                 <Text style={[styles.groupName, { color: colors.text }]}>
