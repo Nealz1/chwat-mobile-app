@@ -12,6 +12,7 @@ import {
     Keyboard,
     Alert,
     Modal,
+    ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
@@ -836,11 +837,13 @@ export function ChatScreen({ route, navigation }: Props) {
                             {language === 'pl' ? 'Wyjaśnienie decyzji' : 'Decision Explanation'}
                         </Text>
                         <Text style={[styles.explainLabel, { color: colors.textSecondary }]}>
-                            {language === 'pl' ? 'Odpowiedź na zapytanie:' : 'Response to query:'}
+                            {language === 'pl' ? 'Wyjaśnienie:' : 'Explanation:'}
                         </Text>
-                        <Text style={[styles.explainText, { color: colors.text, backgroundColor: colors.background }]}>
-                            {explainText}
-                        </Text>
+                        <ScrollView style={{ maxHeight: 300 }} showsVerticalScrollIndicator>
+                            <Text style={[styles.explainText, { color: colors.text, backgroundColor: colors.background }]}>
+                                {explainText}
+                            </Text>
+                        </ScrollView>
                         <TouchableOpacity
                             style={[styles.modalButton, { backgroundColor: colors.primary, marginTop: 16 }]}
                             onPress={() => setExplainModalVisible(false)}
