@@ -15,6 +15,7 @@ import { chatService } from '../services/chatService';
 import type { ChatSession } from '../types';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { Ionicons } from '@expo/vector-icons';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Archives'>;
 
@@ -79,7 +80,7 @@ export function ArchivesScreen({ navigation }: Props) {
                 style={styles.sessionMain}
                 onPress={() => handleOpenChat(item)}
             >
-                <Text style={[styles.sessionIcon, { color: colors.text }]}>📦</Text>
+                <Ionicons name="archive-outline" size={22} color={colors.text} style={styles.sessionIconStyle} />
                 <View style={styles.sessionInfo}>
                     <Text style={[styles.sessionTitle, { color: colors.text }]} numberOfLines={1}>
                         {item.title}
@@ -94,13 +95,13 @@ export function ArchivesScreen({ navigation }: Props) {
                     style={styles.actionButton}
                     onPress={() => handleUnarchive(item)}
                 >
-                    <Text style={[styles.actionIcon, { color: colors.primary }]}>↩</Text>
+                    <Ionicons name="arrow-undo-outline" size={20} color={colors.primary} />
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={styles.actionButton}
                     onPress={() => handleDelete(item)}
                 >
-                    <Text style={[styles.actionIcon, { color: colors.error }]}>🗑</Text>
+                    <Ionicons name="trash-outline" size={20} color={colors.error} />
                 </TouchableOpacity>
             </View>
         </View>
@@ -118,7 +119,7 @@ export function ArchivesScreen({ navigation }: Props) {
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             {sessions.length === 0 ? (
                 <View style={styles.emptyState}>
-                    <Text style={[styles.emptyIcon, { color: colors.textSecondary }]}>📦</Text>
+                    <Ionicons name="archive-outline" size={48} color={colors.textSecondary} style={{ marginBottom: 12 }} />
                     <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
                         {language === 'pl' ? 'Brak zarchiwizowanych rozmów' : 'No archived chats'}
                     </Text>
@@ -155,8 +156,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
     },
-    sessionIcon: {
-        fontSize: 20,
+    sessionIconStyle: {
         marginRight: 12,
     },
     sessionInfo: {
