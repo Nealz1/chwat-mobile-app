@@ -56,15 +56,17 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                 duration: 250,
                 useNativeDriver: true,
             }).start();
-        } else {
-            // Animate out
-            Animated.timing(slideAnim, {
-                toValue: -DRAWER_WIDTH,
-                duration: 200,
-                useNativeDriver: true,
-            }).start();
         }
     }, [visible]);
+
+    // Handle close with animation
+    const handleClose = useCallback(() => {
+        Animated.timing(slideAnim, {
+            toValue: -DRAWER_WIDTH,
+            duration: 200,
+            useNativeDriver: true,
+        }).start(() => onClose());
+    }, [onClose, slideAnim]);
 
     const loadData = async () => {
         const currentUser = await authService.getCurrentUser();
@@ -95,17 +97,17 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
     }, []);
 
     const handleNewChat = () => {
-        onClose();
+        handleClose();
         navigation.navigate('Chat', {});
     };
 
     const handleOpenChat = (session: ChatSession) => {
-        onClose();
+        handleClose();
         navigation.navigate('Chat', { sessionId: session.id });
     };
 
     const navigateTo = (screen: string) => {
-        onClose();
+        handleClose();
         navigation.navigate(screen);
     };
 
@@ -252,9 +254,9 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
             visible={visible}
             transparent
             animationType="none"
-            onRequestClose={onClose}
+            onRequestClose={handleClose}
         >
-            <Pressable style={styles.overlay} onPress={onClose}>
+            <Pressable style={styles.overlay} onPress={handleClose}>
                 <Animated.View
                     style={[
                         styles.drawer,
@@ -413,7 +415,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                         setUser(null);
                                         setSessions([]);
                                         setGroups([]);
-                                        onClose();
+                                        handleClose();
                                     }}
                                 >
                                     <Ionicons name="log-out-outline" size={20} color={colors.text} style={styles.menuItemIcon} />
@@ -586,7 +588,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         padding: 16,
-        paddingTop: 24,
+        paddingTop: 12,
     },
     headerIcon: {
         fontSize: 24,
