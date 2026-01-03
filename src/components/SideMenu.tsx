@@ -263,17 +263,17 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                 </Text>
                             </TouchableOpacity>
 
-                            {/* Search */}
-                            <View style={[styles.searchContainer, { borderColor }]}>
-                                <Text style={[styles.searchIcon, { color: colors.textSecondary }]}>○</Text>
-                                <TextInput
-                                    style={[styles.searchInput, { color: colors.text }]}
-                                    placeholder={language === 'pl' ? 'Szukaj rozmów' : 'Search chats'}
-                                    placeholderTextColor={colors.textSecondary}
-                                    value={searchQuery}
-                                    onChangeText={setSearchQuery}
-                                />
-                            </View>
+
+                            {/* Search - opens dedicated search screen */}
+                            <TouchableOpacity
+                                style={[styles.searchContainer, { borderColor }]}
+                                onPress={() => navigateTo('Search')}
+                            >
+                                <Ionicons name="search" size={18} color={colors.textSecondary} />
+                                <Text style={[styles.searchPlaceholder, { color: colors.textSecondary }]}>
+                                    {language === 'pl' ? 'Szukaj rozmów...' : 'Search chats...'}
+                                </Text>
+                            </TouchableOpacity>
 
                             {/* Groups */}
                             <TouchableOpacity
@@ -605,6 +605,10 @@ const styles = StyleSheet.create({
     searchInput: {
         flex: 1,
         paddingVertical: 10,
+        fontSize: 15,
+    },
+    searchPlaceholder: {
+        flex: 1,
         fontSize: 15,
     },
     sectionLabel: {

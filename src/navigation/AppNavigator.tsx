@@ -8,6 +8,7 @@ import { LoginScreen } from '../screens/LoginScreen';
 import { GroupsScreen } from '../screens/GroupsScreen';
 import { HelpScreen } from '../screens/HelpScreen';
 import { ArchivesScreen } from '../screens/ArchivesScreen';
+import { SearchScreen } from '../screens/SearchScreen';
 import { useTheme } from '../contexts/ThemeContext';
 
 export type RootStackParamList = {
@@ -18,6 +19,7 @@ export type RootStackParamList = {
     Groups: undefined;
     Help: undefined;
     Archives: undefined;
+    Search: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -79,6 +81,14 @@ export function AppNavigator() {
                     options={{
                         title: 'Logowanie',
                         presentation: 'modal',
+                    }}
+                />
+                <Stack.Screen
+                    name="Search"
+                    component={SearchScreen}
+                    options={{
+                        title: 'Szukaj',
+                        headerShown: false,
                     }}
                 />
             </Stack.Navigator>
