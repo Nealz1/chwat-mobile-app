@@ -65,6 +65,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
         if (currentUser) {
             await loadSessions();
             const groupsList = await chatService.getGroups();
+            console.log('Loaded groups:', groupsList);
             setGroups(groupsList);
         }
     };
@@ -526,7 +527,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                 style={styles.actionMenuItem}
                                 onPress={() => handleSelectGroup(group.id)}
                             >
-                                <Text style={[styles.actionMenuIcon, { color: colors.text }]}>📁</Text>
+                                <Ionicons name="folder" size={18} color={colors.text} style={styles.actionMenuIcon} />
                                 <Text style={[styles.actionMenuText, { color: colors.text }]}>
                                     {group.name}
                                 </Text>
