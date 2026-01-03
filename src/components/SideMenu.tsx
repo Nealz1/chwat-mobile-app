@@ -36,7 +36,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
     const [user, setUser] = useState<User | null>(null);
     const [sessions, setSessions] = useState<ChatSession[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
-    const [slideAnim] = useState(new Animated.Value(-DRAWER_WIDTH));
+    const slideAnim = React.useRef(new Animated.Value(-DRAWER_WIDTH)).current;
     const [userMenuVisible, setUserMenuVisible] = useState(false);
     const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null);
     const [actionMenuVisible, setActionMenuVisible] = useState(false);
@@ -46,12 +46,15 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
     useEffect(() => {
         if (visible) {
             loadData();
+            // Reset to offscreen and animate in
+            slideAnim.setValue(-DRAWER_WIDTH);
             Animated.timing(slideAnim, {
                 toValue: 0,
                 duration: 250,
                 useNativeDriver: true,
             }).start();
         } else {
+            // Animate out
             Animated.timing(slideAnim, {
                 toValue: -DRAWER_WIDTH,
                 duration: 200,
