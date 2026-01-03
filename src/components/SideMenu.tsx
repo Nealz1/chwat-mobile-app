@@ -613,7 +613,7 @@ const styles = StyleSheet.create({
     },
     buttonIcon: {
         fontSize: 16,
-        marginRight: 8,
+        marginRight: 12,
     },
     outlinedButtonText: {
         fontSize: 15,
@@ -629,7 +629,7 @@ const styles = StyleSheet.create({
     },
     searchIcon: {
         fontSize: 14,
-        marginRight: 8,
+        marginRight: 12,
     },
     searchInput: {
         flex: 1,
