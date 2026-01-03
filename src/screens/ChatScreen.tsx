@@ -30,7 +30,7 @@ import { BackgroundLogo } from '../components/BackgroundLogo';
 import { SideMenu } from '../components/SideMenu';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { STORAGE_KEYS } from '../config/constants';
+import { STORAGE_KEYS, API_BASE_URL } from '../config/constants';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
 
@@ -56,6 +56,9 @@ export function ChatScreen({ route, navigation }: Props) {
     const [explainModalVisible, setExplainModalVisible] = useState(false);
     const [explainText, setExplainText] = useState('');
     const abortControllerRef = useRef<AbortController | null>(null);
+    const [groupSuggestions, setGroupSuggestions] = useState<string[]>([]);
+    const [showGroupAutocomplete, setShowGroupAutocomplete] = useState(false);
+    const groupSearchTimeout = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
         loadUser();
@@ -469,6 +472,67 @@ export function ChatScreen({ route, navigation }: Props) {
         });
     }, [language]);
 
+    // Detect WCY pattern for group autocomplete
+    const detectGroupPattern = useCallback((text: string): string | null => {
+        const match = text.match(/(?:^|\s)([Ww][Cc][Yy][a-zA-Z0-9]*)$/);
+        return match ? match[1].toUpperCase() : null;
+    }, []);
+
+    // Search groups by pattern
+    const searchGroups = useCallback(async (pattern: string) => {
+        try {
+            const headers = await authService.getAuthHeaders();
+            const response = await fetch(
+                `${API_BASE_URL}/api/groups/search?q=${encodeURIComponent(pattern)}&limit=5`,
+                { headers }
+            );
+            if (response.ok) {
+                const data = await response.json();
+                const groups = data.groups || [];
+                setGroupSuggestions(groups);
+                setShowGroupAutocomplete(groups.length > 0);
+            }
+        } catch (error) {
+            console.error('Error searching groups:', error);
+            setGroupSuggestions([]);
+            setShowGroupAutocomplete(false);
+        }
+    }, []);
+
+    // Handle input change with group pattern detection
+    const handleInputChange = useCallback((text: string) => {
+        setInputText(text);
+
+        // Clear previous timeout
+        if (groupSearchTimeout.current) {
+            clearTimeout(groupSearchTimeout.current);
+        }
+
+        // Detect WCY pattern
+        const pattern = detectGroupPattern(text);
+        if (pattern && pattern.length >= 3) {
+            // Debounce search
+            groupSearchTimeout.current = setTimeout(() => {
+                searchGroups(pattern);
+            }, 300);
+        } else {
+            setGroupSuggestions([]);
+            setShowGroupAutocomplete(false);
+        }
+    }, [detectGroupPattern, searchGroups]);
+
+    // Insert selected group suggestion
+    const insertGroupSuggestion = useCallback((suggestion: string) => {
+        const match = inputText.match(/(?:^|\s)([Ww][Cc][Yy][a-zA-Z0-9]*)$/);
+        if (match) {
+            const patternStart = inputText.length - match[1].length;
+            const newText = inputText.substring(0, patternStart) + suggestion;
+            setInputText(newText);
+        }
+        setGroupSuggestions([]);
+        setShowGroupAutocomplete(false);
+    }, [inputText]);
+
     // Explain Decision - find the user query that triggered this bot response
     const handleExplain = useCallback((botMsgIndex: number) => {
         // Find the preceding user message
@@ -670,16 +734,34 @@ export function ChatScreen({ route, navigation }: Props) {
                             <Text style={[styles.inputActionIcon, { color: colors.textSecondary }]}>+</Text>
                         </TouchableOpacity>
 
-                        <TextInput
-                            style={[styles.input, { color: colors.text, backgroundColor: colors.background }]}
-                            value={inputText}
-                            onChangeText={setInputText}
-                            placeholder={t.chat.placeholder}
-                            placeholderTextColor={colors.textSecondary}
-                            multiline
-                            maxLength={4000}
-                            editable={!isLoading}
-                        />
+                        <View style={styles.inputWithAutocomplete}>
+                            {/* Group autocomplete dropdown */}
+                            {showGroupAutocomplete && groupSuggestions.length > 0 && (
+                                <View style={[styles.autocompleteDropdown, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                                    {groupSuggestions.map((suggestion, index) => (
+                                        <TouchableOpacity
+                                            key={index}
+                                            style={[styles.autocompleteItem, { borderBottomColor: colors.border }]}
+                                            onPress={() => insertGroupSuggestion(suggestion)}
+                                        >
+                                            <Ionicons name="people-outline" size={16} color={colors.textSecondary} />
+                                            <Text style={[styles.autocompleteText, { color: colors.text }]}>{suggestion}</Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            )}
+
+                            <TextInput
+                                style={[styles.input, { color: colors.text, backgroundColor: colors.background }]}
+                                value={inputText}
+                                onChangeText={handleInputChange}
+                                placeholder={t.chat.placeholder}
+                                placeholderTextColor={colors.textSecondary}
+                                multiline
+                                maxLength={4000}
+                                editable={!isLoading}
+                            />
+                        </View>
 
                         {/* Voice record button */}
                         <TouchableOpacity
@@ -968,5 +1050,35 @@ const styles = StyleSheet.create({
         fontSize: 12,
         minWidth: 30,
         textAlign: 'center',
+    },
+    inputWithAutocomplete: {
+        flex: 1,
+        position: 'relative',
+    },
+    autocompleteDropdown: {
+        position: 'absolute',
+        bottom: '100%',
+        left: 0,
+        right: 0,
+        marginBottom: 4,
+        borderRadius: 8,
+        borderWidth: 1,
+        maxHeight: 200,
+        zIndex: 100,
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
+    },
+    autocompleteItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 12,
+        borderBottomWidth: 1,
+        gap: 8,
+    },
+    autocompleteText: {
+        fontSize: 14,
     },
 });
