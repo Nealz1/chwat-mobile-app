@@ -385,6 +385,8 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                     onPress={async () => {
                                         await authService.logout();
                                         setUser(null);
+                                        setSessions([]);
+                                        setGroups([]);
                                         onClose();
                                     }}
                                 >
