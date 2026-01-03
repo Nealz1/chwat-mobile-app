@@ -13,6 +13,7 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 import { authService } from '../services/authService';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { Ionicons } from '@expo/vector-icons';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
@@ -22,12 +23,12 @@ export function LoginScreen({ navigation }: Props) {
     const [isLoading, setIsLoading] = useState(false);
 
     const t = {
-        title: language === 'pl' ? 'Logowanie' : 'Login',
+        title: language === 'pl' ? 'Witaj!' : 'Welcome!',
         subtitle: language === 'pl'
-            ? 'Zaloguj się przez USOS, aby uzyskać dostęp do pełnych funkcji.'
-            : 'Log in via USOS to access full features.',
-        usosButton: language === 'pl' ? '🎓 Zaloguj przez USOS' : '🎓 Login with USOS',
-        skipLogin: language === 'pl' ? 'Kontynuuj bez logowania' : 'Continue without login',
+            ? 'Zaloguj się, aby uzyskać pełny dostęp'
+            : 'Sign in to get full access',
+        usosButton: language === 'pl' ? 'Zaloguj przez USOS' : 'Sign in with USOS',
+        skipLogin: language === 'pl' ? 'Pomiń' : 'Skip',
         success: language === 'pl' ? 'Zalogowano jako' : 'Logged in as',
         error: language === 'pl' ? 'Logowanie nie powiodło się' : 'Login failed',
         cancelled: language === 'pl' ? 'Logowanie anulowane' : 'Login cancelled',
@@ -41,14 +42,13 @@ export function LoginScreen({ navigation }: Props) {
             if (token) {
                 const user = await authService.getCurrentUser();
                 if (user) {
-                    Alert.alert('✅', `${t.success} ${user.first_name} ${user.last_name}`, [
+                    Alert.alert('✅', `${t.success} ${user.first_name}`, [
                         { text: 'OK', onPress: () => navigation.goBack() }
                     ]);
                 } else {
                     Alert.alert('❌', t.error);
                 }
             } else {
-                // User cancelled or closed browser
                 Alert.alert('ℹ️', t.cancelled);
             }
         } catch (error) {
@@ -62,9 +62,9 @@ export function LoginScreen({ navigation }: Props) {
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.content}>
-                {/* Logo/Icon area */}
-                <View style={styles.logoArea}>
-                    <Text style={styles.logoEmoji}>🎓</Text>
+                {/* Modern Icon */}
+                <View style={[styles.iconContainer, { backgroundColor: colors.primary + '15' }]}>
+                    <Ionicons name="school-outline" size={48} color={colors.primary} />
                 </View>
 
                 <Text style={[styles.title, { color: colors.text }]}>
@@ -75,26 +75,30 @@ export function LoginScreen({ navigation }: Props) {
                     {t.subtitle}
                 </Text>
 
-                {/* USOS OAuth Button */}
+                {/* Primary Action Button */}
                 <TouchableOpacity
-                    style={[styles.usosButton, { backgroundColor: '#1a4d8f' }]}
+                    style={[styles.primaryButton, { backgroundColor: colors.primary }]}
                     onPress={handleOAuthLogin}
                     disabled={isLoading}
+                    activeOpacity={0.8}
                 >
                     {isLoading ? (
                         <ActivityIndicator color="#FFFFFF" size="small" />
                     ) : (
-                        <Text style={styles.usosButtonText}>{t.usosButton}</Text>
+                        <>
+                            <Ionicons name="log-in-outline" size={20} color="#FFFFFF" style={styles.buttonIcon} />
+                            <Text style={styles.primaryButtonText}>{t.usosButton}</Text>
+                        </>
                     )}
                 </TouchableOpacity>
 
-                {/* Skip/Cancel */}
+                {/* Skip Link */}
                 <TouchableOpacity
-                    style={styles.cancelButton}
+                    style={styles.skipButton}
                     onPress={() => navigation.goBack()}
                     disabled={isLoading}
                 >
-                    <Text style={[styles.cancelText, { color: colors.textSecondary }]}>
+                    <Text style={[styles.skipText, { color: colors.textSecondary }]}>
                         {t.skipLogin}
                     </Text>
                 </TouchableOpacity>
@@ -109,47 +113,50 @@ const styles = StyleSheet.create({
     },
     content: {
         flex: 1,
-        padding: 24,
+        paddingHorizontal: 32,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    logoArea: {
-        marginBottom: 24,
-    },
-    logoEmoji: {
-        fontSize: 64,
+    iconContainer: {
+        width: 96,
+        height: 96,
+        borderRadius: 48,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 32,
     },
     title: {
-        fontSize: 28,
+        fontSize: 32,
         fontWeight: '700',
-        marginBottom: 12,
-        textAlign: 'center',
+        marginBottom: 8,
     },
     subtitle: {
-        fontSize: 15,
+        fontSize: 16,
         textAlign: 'center',
-        marginBottom: 32,
-        lineHeight: 22,
-        paddingHorizontal: 20,
+        marginBottom: 48,
     },
-    usosButton: {
+    primaryButton: {
+        flexDirection: 'row',
         paddingVertical: 16,
-        paddingHorizontal: 32,
-        borderRadius: 12,
+        paddingHorizontal: 24,
+        borderRadius: 50,
         alignItems: 'center',
-        marginBottom: 16,
+        justifyContent: 'center',
         width: '100%',
+        marginBottom: 16,
     },
-    usosButtonText: {
+    buttonIcon: {
+        marginRight: 8,
+    },
+    primaryButtonText: {
         color: '#FFFFFF',
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: '600',
     },
-    cancelButton: {
-        padding: 16,
-        alignItems: 'center',
+    skipButton: {
+        padding: 12,
     },
-    cancelText: {
-        fontSize: 15,
+    skipText: {
+        fontSize: 14,
     },
 });
