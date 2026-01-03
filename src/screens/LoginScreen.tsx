@@ -85,10 +85,7 @@ export function LoginScreen({ navigation }: Props) {
                     {isLoading ? (
                         <ActivityIndicator color="#FFFFFF" size="small" />
                     ) : (
-                        <>
-                            <Ionicons name="log-in-outline" size={20} color="#FFFFFF" style={styles.buttonIcon} />
-                            <Text style={styles.primaryButtonText}>{t.usosButton}</Text>
-                        </>
+                        <Text style={styles.primaryButtonText}>{t.usosButton}</Text>
                     )}
                 </TouchableOpacity>
 
