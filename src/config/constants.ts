@@ -1,5 +1,5 @@
 // API Configuration - Update this to your backend URL
-export const API_BASE_URL = 'http://192.168.101.2:8000';
+export const API_BASE_URL = 'http://10.70.147.127:8000';
 
 // AsyncStorage Keys (previously localStorage keys)
 export const STORAGE_KEYS = {

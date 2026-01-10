@@ -18,7 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import * as Speech from 'expo-speech';
 import * as DocumentPicker from 'expo-document-picker';
-import { useAudioRecorder, AudioModule, RecordingPresets } from 'expo-audio';
+import { Audio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Markdown from 'react-native-markdown-display';
@@ -34,6 +34,9 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS } from '../config/constants';
 import { useGroupAutocomplete } from '../hooks/useGroupAutocomplete';
+import { MessageItem } from '../components/MessageItem';
+import { ChatInput } from '../components/ChatInput';
+import { SpeechService } from '../services/speechService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
 
@@ -55,7 +58,7 @@ export function ChatScreen({ route, navigation }: Props) {
     const [editText, setEditText] = useState('');
     const [attachedFile, setAttachedFile] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
     const [isRecording, setIsRecording] = useState(false);
-    const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+    const [recording, setRecording] = useState<Audio.Recording | null>(null);
     const [explainModalVisible, setExplainModalVisible] = useState(false);
     const [explainText, setExplainText] = useState('');
     const abortControllerRef = useRef<AbortController | null>(null);
@@ -443,48 +446,68 @@ export function ChatScreen({ route, navigation }: Props) {
         }
     }, [language]);
 
-    // Handle voice recording
+    // Handle voice recording using expo-av
     const handleVoiceRecord = useCallback(async () => {
-        if (isRecording) {
+        if (isRecording && recording) {
             // Stop recording
             try {
-                audioRecorder.stop();
+                await recording.stopAndUnloadAsync();
+                await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
+
+                const uri = recording.getURI();
+                setRecording(null);
                 setIsRecording(false);
 
-                // Get the recorded URI
-                const uri = audioRecorder.uri;
-
-                // For now, just show that recording was captured
-                Alert.alert(
-                    language === 'pl' ? 'Nagranie zakończone' : 'Recording complete',
-                    language === 'pl' ? 'Funkcja transkrypcji wkrótce dostępna' : 'Transcription feature coming soon'
-                );
+                if (uri) {
+                    // Send to backend for transcription
+                    try {
+                        const transcribedText = await SpeechService.transcribe(uri);
+                        if (transcribedText) {
+                            setInputText(prev => prev + (prev ? ' ' : '') + transcribedText);
+                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                        } else {
+                            Alert.alert('Info', 'Nie wykryto mowy');
+                        }
+                    } catch (transcribeError) {
+                        console.error('Transcription error:', transcribeError);
+                        Alert.alert('Błąd', 'Nie udało się przetworzyć nagrania');
+                    }
+                } else {
+                    Alert.alert('Błąd', 'Nagranie nie zostało zapisane');
+                }
             } catch (error) {
                 console.error('Error stopping recording:', error);
+                setRecording(null);
+                setIsRecording(false);
+                Alert.alert('Błąd', 'Nie udało się zakończyć nagrywania');
             }
         } else {
             // Start recording
             try {
-                const status = await AudioModule.requestRecordingPermissionsAsync();
-                if (!status.granted) {
-                    Alert.alert(
-                        language === 'pl' ? 'Brak dostępu' : 'Permission denied',
-                        language === 'pl' ? 'Wymagany dostęp do mikrofonu' : 'Microphone access required'
-                    );
+                const permission = await Audio.requestPermissionsAsync();
+                if (!permission.granted) {
+                    Alert.alert('Brak dostępu', 'Wymagany dostęp do mikrofonu');
                     return;
                 }
 
-                audioRecorder.record();
+                await Audio.setAudioModeAsync({
+                    allowsRecordingIOS: true,
+                    playsInSilentModeIOS: true,
+                });
+
+                const { recording: newRecording } = await Audio.Recording.createAsync(
+                    Audio.RecordingOptionsPresets.HIGH_QUALITY
+                );
+
+                setRecording(newRecording);
                 setIsRecording(true);
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             } catch (error) {
                 console.error('Error starting recording:', error);
-                Alert.alert(
-                    language === 'pl' ? 'Błąd' : 'Error',
-                    language === 'pl' ? 'Nie udało się rozpocząć nagrywania' : 'Failed to start recording'
-                );
+                Alert.alert('Błąd', 'Nie udało się rozpocząć nagrywania');
             }
         }
-    }, [isRecording, language, audioRecorder]);
+    }, [isRecording, recording]);
 
     const handleSpeak = useCallback((text: string) => {
         // Remove markdown formatting for cleaner TTS
@@ -528,142 +551,24 @@ export function ChatScreen({ route, navigation }: Props) {
         }
     }, [messages, language]);
 
-    const renderMessage = useCallback(({ item, index }: { item: Message; index: number }) => {
-        // Welcome message (first message when no chat history) - centered, no bubble
-        const isWelcomeMessage = index === 0 && messages.length === 1 && item.sender === 'bot';
-
-        if (isWelcomeMessage) {
-            return (
-                <View style={styles.welcomeMessageContainer}>
-                    <Text style={[styles.welcomeMessageText, { color: colors.text }]}>
-                        {item.text}
-                    </Text>
-                </View>
-            );
-        }
-
-        return (
-            <View style={[
-                styles.messageContainer,
-                item.sender === 'user' ? styles.userMessage : styles.botMessage,
-                { backgroundColor: item.sender === 'user' ? (isDark ? '#3A3A3A' : '#E5E5E5') : 'transparent' }
-            ]}>
-                {item.isLoading ? (
-                    <ActivityIndicator color={colors.text} size="small" />
-                ) : (
-                    <>
-                        <Markdown style={{
-                            body: {
-                                color: colors.text,
-                                fontSize: 16,
-                            },
-                            code_inline: {
-                                backgroundColor: isDark ? '#2D2D2D' : '#F0F0F0',
-                                borderRadius: 4,
-                                paddingHorizontal: 4,
-                            },
-                            code_block: {
-                                backgroundColor: isDark ? '#1E1E1E' : '#F5F5F5',
-                                borderRadius: 8,
-                                padding: 12,
-                            },
-                        }}>
-                            {item.text}
-                        </Markdown>
-                        {/* Action buttons */}
-                        <View style={styles.messageActions}>
-                            <TouchableOpacity
-                                style={styles.actionButton}
-                                onPress={() => handleCopyMessage(item.text)}
-                            >
-                                <Ionicons name="copy-outline" size={16} color={colors.textSecondary} />
-                            </TouchableOpacity>
-                            {item.sender === 'user' && (
-                                <TouchableOpacity
-                                    style={styles.actionButton}
-                                    onPress={() => handleStartEdit(index, item.text)}
-                                    disabled={isLoading}
-                                >
-                                    <Ionicons name="pencil-outline" size={16} color={colors.textSecondary} />
-                                </TouchableOpacity>
-                            )}
-                            {item.sender === 'bot' && index > 0 && (
-                                <TouchableOpacity
-                                    style={styles.actionButton}
-                                    onPress={() => handleRegenerateResponse(index)}
-                                    disabled={isLoading}
-                                >
-                                    <Ionicons name="refresh-outline" size={16} color={colors.textSecondary} />
-                                </TouchableOpacity>
-                            )}
-                            {item.sender === 'bot' && (
-                                <TouchableOpacity
-                                    style={styles.actionButton}
-                                    onPress={() => handleSpeak(item.text)}
-                                >
-                                    <Ionicons name="volume-high-outline" size={16} color={colors.textSecondary} />
-                                </TouchableOpacity>
-                            )}
-                            {item.sender === 'bot' && index > 0 && (
-                                <TouchableOpacity
-                                    style={styles.actionButton}
-                                    onPress={() => handleExplain(index)}
-                                >
-                                    <Ionicons name="help-circle-outline" size={16} color={colors.textSecondary} />
-                                </TouchableOpacity>
-                            )}
-                            {item.sender === 'bot' && item.nodeId && user && (
-                                <>
-                                    <TouchableOpacity
-                                        style={styles.actionButton}
-                                        onPress={() => handleFeedback(item.nodeId!, 'positive')}
-                                    >
-                                        <Ionicons name="thumbs-up-outline" size={16} color={item.feedback === 'positive' ? colors.primary : colors.textSecondary} />
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        style={styles.actionButton}
-                                        onPress={() => handleFeedback(item.nodeId!, 'negative')}
-                                    >
-                                        <Ionicons name="thumbs-down-outline" size={16} color={item.feedback === 'negative' ? '#FF4444' : colors.textSecondary} />
-                                    </TouchableOpacity>
-                                </>
-                            )}
-                            {/* Version Navigator */}
-                            {item.siblingCount && item.siblingCount > 1 && (
-                                <View style={styles.versionNavigator}>
-                                    <TouchableOpacity
-                                        style={styles.versionButton}
-                                        onPress={() => handleNavigateVersion(index, 'prev')}
-                                        disabled={(item.currentIndex ?? 1) <= 1}
-                                    >
-                                        <Ionicons
-                                            name="chevron-back"
-                                            size={14}
-                                            color={(item.currentIndex ?? 1) <= 1 ? colors.border : colors.textSecondary}
-                                        />
-                                    </TouchableOpacity>
-                                    <Text style={[styles.versionText, { color: colors.textSecondary }]}>
-                                        {item.currentIndex ?? 1}/{item.siblingCount}
-                                    </Text>
-                                    <TouchableOpacity
-                                        style={styles.versionButton}
-                                        onPress={() => handleNavigateVersion(index, 'next')}
-                                        disabled={(item.currentIndex ?? 1) >= (item.siblingCount ?? 1)}
-                                    >
-                                        <Ionicons
-                                            name="chevron-forward"
-                                            size={14}
-                                            color={(item.currentIndex ?? 1) >= (item.siblingCount ?? 1) ? colors.border : colors.textSecondary}
-                                        />
-                                    </TouchableOpacity>
-                                </View>
-                            )}
-                        </View>
-                    </>
-                )}
-            </View>
-        );
-    }, [colors, isDark, handleCopyMessage, handleRegenerateResponse, handleStartEdit, handleFeedback, handleSpeak, handleNavigateVersion, isLoading, user, messages]);
+    const renderMessage = useCallback(({ item, index }: { item: Message; index: number }) => (
+        <MessageItem
+            item={item}
+            index={index}
+            messagesLength={messages.length}
+            colors={colors}
+            isDark={isDark}
+            isLoading={isLoading}
+            user={user}
+            onCopy={handleCopyMessage}
+            onEdit={handleStartEdit}
+            onRegenerate={handleRegenerateResponse}
+            onSpeak={handleSpeak}
+            onExplain={handleExplain}
+            onFeedback={handleFeedback}
+            onNavigateVersion={handleNavigateVersion}
+        />
+    ), [colors, isDark, handleCopyMessage, handleRegenerateResponse, handleStartEdit, handleFeedback, handleSpeak, handleNavigateVersion, handleExplain, isLoading, user, messages]);
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
@@ -688,103 +593,25 @@ export function ChatScreen({ route, navigation }: Props) {
                     keyboardShouldPersistTaps="handled"
                 />
 
-                {/* Input Area - Positioned at bottom */}
-                <View style={[
-                    styles.inputContainer,
-                    {
-                        backgroundColor: colors.surface,
-                        position: 'absolute',
-                        left: 0,
-                        right: 0,
-                        bottom: keyboardHeight > 0 ? keyboardHeight : 0,
-                        paddingBottom: keyboardHeight > 0 ? 50 : 35,
-                    }
-                ]}>
-                    {/* Attached file indicator */}
-                    {attachedFile && (
-                        <View style={[styles.attachedFileRow, { backgroundColor: colors.background }]}>
-                            <Text style={[styles.attachedFileName, { color: colors.text }]} numberOfLines={1}>
-                                📎 {attachedFile.name}
-                            </Text>
-                            <TouchableOpacity onPress={() => setAttachedFile(null)}>
-                                <Text style={[styles.removeAttachment, { color: colors.error }]}>✕</Text>
-                            </TouchableOpacity>
-                        </View>
-                    )}
-                    <View style={styles.inputRow}>
-                        {/* Attach file button */}
-                        <TouchableOpacity
-                            style={styles.inputActionButton}
-                            onPress={handleAttachFile}
-                            disabled={isLoading}
-                        >
-                            <Text style={[styles.inputActionIcon, { color: colors.textSecondary }]}>+</Text>
-                        </TouchableOpacity>
-
-                        <View style={styles.inputWithAutocomplete}>
-                            {/* Group autocomplete dropdown */}
-                            {showGroupAutocomplete && groupSuggestions.length > 0 && (
-                                <View style={[styles.autocompleteDropdown, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                                    {groupSuggestions.map((suggestion, index) => (
-                                        <TouchableOpacity
-                                            key={index}
-                                            style={[styles.autocompleteItem, { borderBottomColor: colors.border }]}
-                                            onPress={() => handleInsertGroupSuggestion(suggestion)}
-                                        >
-                                            <Ionicons name="people-outline" size={16} color={colors.textSecondary} />
-                                            <Text style={[styles.autocompleteText, { color: colors.text }]}>{suggestion}</Text>
-                                        </TouchableOpacity>
-                                    ))}
-                                </View>
-                            )}
-
-                            <TextInput
-                                style={[styles.input, { color: colors.text, backgroundColor: colors.background }]}
-                                value={inputText}
-                                onChangeText={handleInputChange}
-                                placeholder={t.chat.placeholder}
-                                placeholderTextColor={colors.textSecondary}
-                                multiline
-                                maxLength={4000}
-                                editable={!isLoading}
-                            />
-                        </View>
-
-                        {/* Voice record button */}
-                        <TouchableOpacity
-                            style={styles.inputActionButton}
-                            onPress={handleVoiceRecord}
-                            disabled={isLoading}
-                        >
-                            <Ionicons
-                                name={isRecording ? "stop-circle" : "mic-outline"}
-                                size={24}
-                                color={isRecording ? colors.error : colors.textSecondary}
-                            />
-                        </TouchableOpacity>
-
-                        {/* Send/Cancel button */}
-                        {isLoading ? (
-                            <TouchableOpacity
-                                style={[styles.sendButton, { backgroundColor: colors.error }]}
-                                onPress={handleCancel}
-                            >
-                                <Ionicons name="stop" size={20} color="#FFFFFF" />
-                            </TouchableOpacity>
-                        ) : (
-                            <TouchableOpacity
-                                style={[
-                                    styles.sendButton,
-                                    { backgroundColor: inputText.trim() ? colors.primary : colors.border }
-                                ]}
-                                onPress={handleSend}
-                                disabled={!inputText.trim()}
-                            >
-                                <Ionicons name="send" size={20} color="#FFFFFF" />
-                            </TouchableOpacity>
-                        )}
-                    </View>
-                </View>
+                {/* Input Area */}
+                <ChatInput
+                    inputText={inputText}
+                    onInputChange={handleInputChange}
+                    onSend={handleSend}
+                    onCancel={handleCancel}
+                    onAttachFile={handleAttachFile}
+                    onVoiceRecord={handleVoiceRecord}
+                    isLoading={isLoading}
+                    isRecording={isRecording}
+                    attachedFile={attachedFile}
+                    onRemoveAttachment={() => setAttachedFile(null)}
+                    placeholder={t.chat.placeholder}
+                    colors={colors}
+                    keyboardHeight={keyboardHeight}
+                    showGroupAutocomplete={showGroupAutocomplete}
+                    groupSuggestions={groupSuggestions}
+                    onInsertGroupSuggestion={handleInsertGroupSuggestion}
+                />
             </KeyboardAvoidingView>
 
             {/* Edit Message Modal */}
