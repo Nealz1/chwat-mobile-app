@@ -211,9 +211,13 @@ export function ChatScreen({ route, navigation }: Props) {
         // Haptic feedback on send
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-        const userMessage: Message = { sender: 'user', text: inputText.trim() };
+        const messageText = inputText.trim();
+        const currentAttachment = attachedFile;
+
+        const userMessage: Message = { sender: 'user', text: messageText };
         setMessages(prev => [...prev, userMessage]);
         setInputText('');
+        setAttachedFile(null);
         setIsLoading(true);
 
         setMessages(prev => [...prev, { sender: 'bot', text: '', isLoading: true }]);
@@ -222,12 +226,23 @@ export function ChatScreen({ route, navigation }: Props) {
             let response: SendMessageResponse | { response: string };
 
             if (user) {
-                response = await chatService.sendMessage(inputText.trim(), currentSessionId);
+                // Check if we have an image attachment
+                if (currentAttachment && currentAttachment.mimeType?.startsWith('image/')) {
+                    response = await chatService.sendMessageWithImage(
+                        messageText,
+                        currentAttachment.uri,
+                        currentAttachment.mimeType || 'image/jpeg',
+                        currentSessionId
+                    );
+                } else {
+                    response = await chatService.sendMessage(messageText, currentSessionId);
+                }
+
                 if ('session_id' in response) {
                     setCurrentSessionId(response.session_id);
                 }
             } else {
-                response = await chatService.sendGuestMessage(inputText.trim());
+                response = await chatService.sendGuestMessage(messageText);
             }
 
             setMessages(prev => [
@@ -248,7 +263,7 @@ export function ChatScreen({ route, navigation }: Props) {
             setIsLoading(false);
             abortControllerRef.current = null;
         }
-    }, [inputText, isLoading, user, currentSessionId, t]);
+    }, [inputText, isLoading, user, currentSessionId, attachedFile, t]);
 
     const handleCancel = useCallback(() => {
         if (abortControllerRef.current) {

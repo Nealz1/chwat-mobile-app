@@ -71,6 +71,47 @@ class ChatService {
         return await response.json();
     }
 
+    async sendMessageWithImage(
+        message: string,
+        imageUri: string,
+        mimeType: string = 'image/jpeg',
+        sessionId?: number
+    ): Promise<SendMessageResponse> {
+        const headers = await authService.getAuthHeaders();
+        // Remove Content-Type to let fetch set it with boundary for FormData
+        delete headers['Content-Type'];
+
+        const formData = new FormData();
+        formData.append('message', message);
+        if (sessionId) {
+            formData.append('session_id', String(sessionId));
+        }
+
+        // Get filename from URI
+        const filename = imageUri.split('/').pop() || `image_${Date.now()}.jpg`;
+
+        // Append file (backend expects 'file' field name)
+        formData.append('file', {
+            uri: imageUri,
+            type: mimeType,
+            name: filename,
+        } as any);
+
+        const response = await fetch(`${API_BASE_URL}/chat`, {
+            method: 'POST',
+            headers,
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Failed to send message with image:', errorText);
+            throw new Error('Failed to send message');
+        }
+
+        return await response.json();
+    }
+
     async sendGuestMessage(message: string): Promise<{ response: string }> {
         // Use the same endpoint as web frontend (streaming returns full response)
         const response = await fetch(`${API_BASE_URL}/chat/stream`, {
