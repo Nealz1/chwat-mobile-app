@@ -12,7 +12,7 @@ import { SearchScreen } from '../screens/SearchScreen';
 import { useTheme } from '../contexts/ThemeContext';
 
 export type RootStackParamList = {
-    Chat: { sessionId?: number } | undefined;
+    Chat: { sessionId?: number; newChat?: number } | undefined;
     Sessions: undefined;
     Settings: undefined;
     Login: undefined;

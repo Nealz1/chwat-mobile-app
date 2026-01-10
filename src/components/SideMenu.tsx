@@ -98,7 +98,8 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
 
     const handleNewChat = () => {
         handleClose();
-        navigation.navigate('Chat', {});
+        // Pass a unique key to force Chat screen to reset even if already on it
+        navigation.navigate('Chat', { newChat: Date.now() });
     };
 
     const handleOpenChat = (session: ChatSession) => {

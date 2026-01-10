@@ -18,6 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import * as Speech from 'expo-speech';
 import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
 import { Audio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -56,11 +57,12 @@ export function ChatScreen({ route, navigation }: Props) {
     const [keyboardHeight, setKeyboardHeight] = useState(0);
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [editText, setEditText] = useState('');
-    const [attachedFile, setAttachedFile] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
+    const [attachedFile, setAttachedFile] = useState<{ uri: string; name: string; mimeType?: string } | null>(null);
     const [isRecording, setIsRecording] = useState(false);
     const [recording, setRecording] = useState<Audio.Recording | null>(null);
     const [explainModalVisible, setExplainModalVisible] = useState(false);
     const [explainText, setExplainText] = useState('');
+    const [attachmentModalVisible, setAttachmentModalVisible] = useState(false);
     const abortControllerRef = useRef<AbortController | null>(null);
 
     // Use group autocomplete hook
@@ -133,12 +135,24 @@ export function ChatScreen({ route, navigation }: Props) {
         };
     }, []);
 
+    // Handle navigation with sessionId (from search, history, etc.)
     useEffect(() => {
-        if (route.params?.sessionId && route.params.sessionId !== currentSessionId) {
-            setCurrentSessionId(route.params.sessionId);
-            loadSessionMessages(route.params.sessionId);
+        const sessionId = route.params?.sessionId;
+        if (sessionId) {
+            setCurrentSessionId(sessionId);
+            loadSessionMessages(sessionId);
         }
     }, [route.params?.sessionId]);
+
+    // Handle "Nowa rozmowa" - reset chat when newChat param changes (but not if sessionId was provided)
+    useEffect(() => {
+        if (route.params?.newChat && !route.params?.sessionId) {
+            setCurrentSessionId(undefined);
+            setMessages([{ sender: 'bot', text: t.chat.welcomeMessage }]);
+            setInputText('');
+            setAttachedFile(null);
+        }
+    }, [route.params?.newChat, route.params?.sessionId, t]);
 
     // Set up header with hamburger menu
     useEffect(() => {
@@ -421,30 +435,70 @@ export function ChatScreen({ route, navigation }: Props) {
         }
     }, [currentSessionId, messages]);
 
-    // Handle file attachment
-    const handleAttachFile = useCallback(async () => {
+    // Handle file attachment - show modal
+    const handleAttachFile = useCallback(() => {
+        setAttachmentModalVisible(true);
+    }, []);
+
+    const handleCameraPress = useCallback(async () => {
+        setAttachmentModalVisible(false);
+        const permission = await ImagePicker.requestCameraPermissionsAsync();
+        if (!permission.granted) {
+            Alert.alert('Brak dostępu', 'Wymagany dostęp do aparatu');
+            return;
+        }
+        const result = await ImagePicker.launchCameraAsync({
+            mediaTypes: ['images'],
+            quality: 0.8,
+        });
+        if (!result.canceled && result.assets[0]) {
+            const asset = result.assets[0];
+            setAttachedFile({
+                uri: asset.uri,
+                name: `photo_${Date.now()}.jpg`,
+                mimeType: 'image/jpeg',
+            });
+        }
+    }, []);
+
+    const handleGalleryPress = useCallback(async () => {
+        setAttachmentModalVisible(false);
+        const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!permission.granted) {
+            Alert.alert('Brak dostępu', 'Wymagany dostęp do galerii');
+            return;
+        }
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images', 'videos'],
+            quality: 0.8,
+        });
+        if (!result.canceled && result.assets[0]) {
+            const asset = result.assets[0];
+            const filename = asset.uri.split('/').pop() || `media_${Date.now()}`;
+            setAttachedFile({
+                uri: asset.uri,
+                name: filename,
+                mimeType: asset.mimeType || 'image/jpeg',
+            });
+        }
+    }, []);
+
+    const handleFilesPress = useCallback(async () => {
+        setAttachmentModalVisible(false);
         try {
             const result = await DocumentPicker.getDocumentAsync({
                 type: '*/*',
                 copyToCacheDirectory: true,
             });
-
             if (!result.canceled && result.assets && result.assets.length > 0) {
                 const file = result.assets[0];
                 setAttachedFile(file);
-                Alert.alert(
-                    language === 'pl' ? 'Plik załączony' : 'File attached',
-                    file.name
-                );
             }
         } catch (error) {
             console.error('Error picking document:', error);
-            Alert.alert(
-                language === 'pl' ? 'Błąd' : 'Error',
-                language === 'pl' ? 'Nie udało się wybrać pliku' : 'Failed to pick file'
-            );
+            Alert.alert('Błąd', 'Nie udało się wybrać pliku');
         }
-    }, [language]);
+    }, []);
 
     // Handle voice recording using expo-av
     const handleVoiceRecord = useCallback(async () => {
@@ -650,6 +704,61 @@ export function ChatScreen({ route, navigation }: Props) {
                         </View>
                     </View>
                 </View>
+            </Modal>
+
+            {/* Attachment Options Modal */}
+            <Modal
+                visible={attachmentModalVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setAttachmentModalVisible(false)}
+            >
+                <TouchableOpacity
+                    style={styles.modalOverlay}
+                    activeOpacity={1}
+                    onPress={() => setAttachmentModalVisible(false)}
+                >
+                    <View style={[styles.attachmentModal, { backgroundColor: colors.surface }]}>
+                        <Text style={[styles.attachmentTitle, { color: colors.text }]}>
+                            {language === 'pl' ? 'Dodaj załącznik' : 'Add attachment'}
+                        </Text>
+                        <View style={styles.attachmentOptions}>
+                            <TouchableOpacity
+                                style={styles.attachmentOption}
+                                onPress={handleCameraPress}
+                            >
+                                <View style={[styles.attachmentIconContainer, { backgroundColor: colors.primary + '20' }]}>
+                                    <Ionicons name="camera-outline" size={28} color={colors.primary} />
+                                </View>
+                                <Text style={[styles.attachmentOptionText, { color: colors.text }]}>
+                                    {language === 'pl' ? 'Aparat' : 'Camera'}
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.attachmentOption}
+                                onPress={handleGalleryPress}
+                            >
+                                <View style={[styles.attachmentIconContainer, { backgroundColor: colors.primary + '20' }]}>
+                                    <Ionicons name="images-outline" size={28} color={colors.primary} />
+                                </View>
+                                <Text style={[styles.attachmentOptionText, { color: colors.text }]}>
+                                    {language === 'pl' ? 'Galeria' : 'Gallery'}
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.attachmentOption}
+                                onPress={handleFilesPress}
+                            >
+                                <View style={[styles.attachmentIconContainer, { backgroundColor: colors.primary + '20' }]}>
+                                    <Ionicons name="document-outline" size={28} color={colors.primary} />
+                                </View>
+                                <Text style={[styles.attachmentOptionText, { color: colors.text }]}>
+                                    {language === 'pl' ? 'Pliki' : 'Files'}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </TouchableOpacity>
             </Modal>
 
             {/* Explain Decision Modal */}
@@ -900,5 +1009,37 @@ const styles = StyleSheet.create({
     },
     autocompleteText: {
         fontSize: 14,
+    },
+    attachmentModal: {
+        width: '80%',
+        borderRadius: 16,
+        padding: 20,
+        alignItems: 'center',
+    },
+    attachmentTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        marginBottom: 20,
+    },
+    attachmentOptions: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        width: '100%',
+    },
+    attachmentOption: {
+        alignItems: 'center',
+        padding: 12,
+    },
+    attachmentIconContainer: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    attachmentOptionText: {
+        fontSize: 13,
+        fontWeight: '500',
     },
 });

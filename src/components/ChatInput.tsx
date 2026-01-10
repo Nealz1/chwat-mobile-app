@@ -5,6 +5,7 @@ import {
     TextInput,
     TouchableOpacity,
     StyleSheet,
+    Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -76,11 +77,20 @@ export function ChatInput({
             {/* Attached file indicator */}
             {attachedFile && (
                 <View style={[styles.attachedFileRow, { backgroundColor: colors.background }]}>
+                    {/* Show image thumbnail if it's an image, otherwise show icon */}
+                    {attachedFile.mimeType?.startsWith('image/') ? (
+                        <Image
+                            source={{ uri: attachedFile.uri }}
+                            style={styles.attachedThumbnail}
+                        />
+                    ) : (
+                        <Ionicons name="document-attach-outline" size={20} color={colors.textSecondary} />
+                    )}
                     <Text style={[styles.attachedFileName, { color: colors.text }]} numberOfLines={1}>
-                        📎 {attachedFile.name}
+                        {attachedFile.name}
                     </Text>
-                    <TouchableOpacity onPress={onRemoveAttachment}>
-                        <Text style={[styles.removeAttachment, { color: colors.error }]}>✕</Text>
+                    <TouchableOpacity onPress={onRemoveAttachment} style={styles.removeButton}>
+                        <Ionicons name="close-circle" size={22} color={colors.error} />
                     </TouchableOpacity>
                 </View>
             )}
@@ -241,5 +251,14 @@ const styles = StyleSheet.create({
     autocompleteText: {
         fontSize: 14,
         flex: 1,
+    },
+    attachedThumbnail: {
+        width: 36,
+        height: 36,
+        borderRadius: 6,
+        marginRight: 8,
+    },
+    removeButton: {
+        padding: 4,
     },
 });
