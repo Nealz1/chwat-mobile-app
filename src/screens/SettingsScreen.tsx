@@ -198,7 +198,7 @@ export function SettingsScreen({ navigation }: Props) {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-            {/* Tabs */}
+            
             <View style={styles.tabsContainer}>
                 {renderTab('general', language === 'pl' ? 'Ogólne' : 'General')}
                 {user && renderTab('account', language === 'pl' ? 'Konto' : 'Account')}
@@ -207,7 +207,7 @@ export function SettingsScreen({ navigation }: Props) {
             <ScrollView contentContainerStyle={styles.content}>
                 {activeTab === 'general' && (
                     <>
-                        {/* User Section */}
+                        
                         {user ? (
                             <View style={[styles.section, { backgroundColor: colors.surface }]}>
                                 <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
@@ -252,7 +252,7 @@ export function SettingsScreen({ navigation }: Props) {
                             </View>
                         )}
 
-                        {/* Theme Section */}
+                        
                         <View style={[styles.section, { backgroundColor: colors.surface }]}>
                             <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
                                 {t.settings.theme.toUpperCase()}
@@ -270,7 +270,7 @@ export function SettingsScreen({ navigation }: Props) {
                             </View>
                         </View>
 
-                        {/* Language Section */}
+                        
                         <View style={[styles.section, { backgroundColor: colors.surface }]}>
                             <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
                                 {t.settings.language.toUpperCase()}
@@ -285,7 +285,7 @@ export function SettingsScreen({ navigation }: Props) {
                             </TouchableOpacity>
                         </View>
 
-                        {/* About Section */}
+                        
                         <View style={[styles.section, { backgroundColor: colors.surface }]}>
                             <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
                                 {language === 'pl' ? 'INFORMACJE' : 'ABOUT'}
@@ -306,7 +306,7 @@ export function SettingsScreen({ navigation }: Props) {
 
                 {activeTab === 'account' && user && (
                     <>
-                        {/* Personal Info */}
+                        
                         <View style={[styles.section, { backgroundColor: colors.surface }]}>
                             <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
                                 {language === 'pl' ? 'DANE OSOBOWE' : 'PERSONAL INFO'}
@@ -381,7 +381,7 @@ export function SettingsScreen({ navigation }: Props) {
                             )}
                         </View>
 
-                        {/* Academic Info */}
+                        
                         <View style={[styles.section, { backgroundColor: colors.surface }]}>
                             <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
                                 {language === 'pl' ? 'DANE STUDENTA' : 'STUDENT INFO'}
@@ -450,7 +450,7 @@ export function SettingsScreen({ navigation }: Props) {
                             </View>
                         </View>
 
-                        {/* Address Section */}
+                        
                         <View style={[styles.section, { backgroundColor: colors.surface }]}>
                             <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
                                 {language === 'pl' ? 'ADRES' : 'ADDRESS'}

@@ -1,13 +1,6 @@
-/**
- * Session Helpers
- * Utilities for session management
- */
 
 import type { ChatSession } from '../types';
 
-/**
- * Group sessions by date category
- */
 export interface GroupedSessions {
     today: ChatSession[];
     yesterday: ChatSession[];
@@ -54,18 +47,12 @@ export const groupSessionsByDate = (sessions: ChatSession[]): GroupedSessions =>
     return grouped;
 };
 
-/**
- * Sort sessions by date (newest first)
- */
 export const sortSessionsByDate = (sessions: ChatSession[]): ChatSession[] => {
     return [...sessions].sort((a, b) =>
         new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
     );
 };
 
-/**
- * Filter sessions by search query
- */
 export const filterSessionsByQuery = (sessions: ChatSession[], query: string): ChatSession[] => {
     if (!query.trim()) return sessions;
     const lowerQuery = query.toLowerCase();
@@ -74,9 +61,6 @@ export const filterSessionsByQuery = (sessions: ChatSession[], query: string): C
     );
 };
 
-/**
- * Get pinned sessions first, then sort by date
- */
 export const sortWithPinnedFirst = (sessions: ChatSession[]): ChatSession[] => {
     const pinned = sessions.filter(s => s.is_pinned);
     const unpinned = sessions.filter(s => !s.is_pinned);

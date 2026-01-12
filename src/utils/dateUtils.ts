@@ -1,7 +1,3 @@
-/**
- * Date Utilities
- * Format dates for display
- */
 
 export const formatRelativeDate = (dateStr: string, language: 'en' | 'pl' = 'en'): string => {
     const date = new Date(dateStr);
@@ -15,26 +11,17 @@ export const formatRelativeDate = (dateStr: string, language: 'en' | 'pl' = 'en'
     return date.toLocaleDateString(language === 'pl' ? 'pl-PL' : 'en-US');
 };
 
-/**
- * Format time for message timestamps
- */
 export const formatTime = (dateStr: string): string => {
     const date = new Date(dateStr);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
 
-/**
- * Check if date is today
- */
 export const isToday = (dateStr: string): boolean => {
     const date = new Date(dateStr);
     const today = new Date();
     return date.toDateString() === today.toDateString();
 };
 
-/**
- * Check if date is within last N days
- */
 export const isWithinDays = (dateStr: string, days: number): boolean => {
     const date = new Date(dateStr);
     const now = new Date();

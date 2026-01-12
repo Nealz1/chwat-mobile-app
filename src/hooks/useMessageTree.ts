@@ -1,12 +1,7 @@
-/**
- * Message Tree Hook for React Native
- * Handles message versioning and navigation (‹ 1/3 ›)
- */
 
 import { useState, useCallback } from 'react';
 import { chatService } from '../services/chatService';
 
-// Message type matching the web frontend
 export interface Message {
     sender: 'user' | 'bot';
     text: string;
@@ -18,7 +13,6 @@ export interface Message {
     isLoading?: boolean;
 }
 
-// Message node from API
 interface MessageNode {
     id: number;
     role: 'user' | 'assistant';
@@ -32,7 +26,6 @@ interface MessageNode {
 export const useMessageTree = (sessionId: number | null) => {
     const [treeVersion, setTreeVersion] = useState(0);
 
-    // Convert tree nodes to message format
     const convertTreeToMessages = (tree: MessageNode[]): Message[] => {
         return tree.map(node => ({
             sender: node.role === 'user' ? 'user' : 'bot',
@@ -45,7 +38,6 @@ export const useMessageTree = (sessionId: number | null) => {
         })) as Message[];
     };
 
-    // Load full conversation tree
     const loadConversationTree = useCallback(async (): Promise<Message[]> => {
         if (!sessionId) return [];
 
@@ -58,7 +50,6 @@ export const useMessageTree = (sessionId: number | null) => {
         }
     }, [sessionId]);
 
-    // Regenerate bot message (creates new version)
     const regenerateMessage = useCallback(async (
         index: number,
         messages: Message[]
@@ -68,7 +59,6 @@ export const useMessageTree = (sessionId: number | null) => {
         const message = messages[index];
         if (!message || message.sender !== 'bot') return null;
 
-        // Find parent user message
         const parentMessage = index > 0 ? messages[index - 1] : null;
         if (!parentMessage || !parentMessage.nodeId) return null;
 
@@ -76,7 +66,6 @@ export const useMessageTree = (sessionId: number | null) => {
             const result = await chatService.regenerateResponse(sessionId, parentMessage.nodeId);
             if (!result) return null;
 
-            // Reload tree after regeneration
             const updatedTree = await chatService.getConversationTree(sessionId);
             setTreeVersion(v => v + 1);
             return convertTreeToMessages(updatedTree);
@@ -86,7 +75,6 @@ export const useMessageTree = (sessionId: number | null) => {
         }
     }, [sessionId]);
 
-    // Edit user message (creates new branch)
     const editMessage = useCallback(async (
         index: number,
         newContent: string,
@@ -101,7 +89,6 @@ export const useMessageTree = (sessionId: number | null) => {
             const result = await chatService.editMessage(sessionId, message.nodeId, newContent);
             if (!result) return null;
 
-            // Reload tree after edit
             const updatedTree = await chatService.getConversationTree(sessionId);
             setTreeVersion(v => v + 1);
             return convertTreeToMessages(updatedTree);
@@ -111,7 +98,6 @@ export const useMessageTree = (sessionId: number | null) => {
         }
     }, [sessionId]);
 
-    // Navigate between message versions (‹ prev / next ›)
     const navigateVersion = useCallback(async (
         index: number,
         direction: 'prev' | 'next',
@@ -145,7 +131,6 @@ export const useMessageTree = (sessionId: number | null) => {
 
             await chatService.setActiveVersion(sessionId, parentId, newSibling.id);
 
-            // Reload tree after version change
             const updatedTree = await chatService.getConversationTree(sessionId);
             setTreeVersion(v => v + 1);
             return convertTreeToMessages(updatedTree);

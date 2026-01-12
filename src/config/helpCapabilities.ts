@@ -1,7 +1,3 @@
-/**
- * Help Screen Capabilities
- * Lists what the assistant can help with
- */
 
 interface Capability {
     icon: string;

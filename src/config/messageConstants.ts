@@ -1,7 +1,3 @@
-/**
- * Message Constants
- * Type-safe constants for message handling
- */
 
 export const MESSAGE_SENDER = {
     USER: 'user' as const,

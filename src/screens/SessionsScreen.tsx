@@ -35,12 +35,10 @@ export function SessionsScreen({ navigation }: Props) {
     const [searchQuery, setSearchQuery] = useState('');
     const [activeTab, setActiveTab] = useState<TabType>('active');
 
-    // Rename modal state
     const [renameModalVisible, setRenameModalVisible] = useState(false);
     const [sessionToRename, setSessionToRename] = useState<ChatSession | null>(null);
     const [newTitle, setNewTitle] = useState('');
 
-    // Add to group modal state
     const [groupModalVisible, setGroupModalVisible] = useState(false);
     const [sessionForGroup, setSessionForGroup] = useState<ChatSession | null>(null);
     const [groups, setGroups] = useState<Group[]>([]);
@@ -275,7 +273,7 @@ export function SessionsScreen({ navigation }: Props) {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-            {/* Search Bar */}
+            
             <View style={[styles.searchContainer, { backgroundColor: colors.surface }]}>
                 <TextInput
                     style={[styles.searchInput, { color: colors.text }]}
@@ -286,14 +284,14 @@ export function SessionsScreen({ navigation }: Props) {
                 />
             </View>
 
-            {/* Tabs */}
+            
             <View style={styles.tabsContainer}>
                 {renderTab('active', t.sessions.active)}
                 {renderTab('pinned', t.sessions.pinned)}
                 {renderTab('archived', t.sessions.archived)}
             </View>
 
-            {/* Sessions List */}
+            
             {sessions.length === 0 ? (
                 <View style={styles.emptyContainer}>
                     <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
@@ -312,7 +310,7 @@ export function SessionsScreen({ navigation }: Props) {
                 />
             )}
 
-            {/* Rename Modal */}
+            
             <Modal
                 visible={renameModalVisible}
                 transparent
@@ -355,7 +353,7 @@ export function SessionsScreen({ navigation }: Props) {
                 </View>
             </Modal>
 
-            {/* Add to Group Modal */}
+            
             <Modal
                 visible={groupModalVisible}
                 transparent

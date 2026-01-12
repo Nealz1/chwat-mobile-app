@@ -38,7 +38,6 @@ interface ChatInputProps {
         error: string;
     };
     keyboardHeight: number;
-    // Autocomplete
     showGroupAutocomplete: boolean;
     groupSuggestions: string[];
     onInsertGroupSuggestion: (suggestion: string) => void;
@@ -74,10 +73,10 @@ export function ChatInput({
                 paddingBottom: keyboardHeight > 0 ? 50 : 35,
             }
         ]}>
-            {/* Attached file indicator */}
+            
             {attachedFile && (
                 <View style={[styles.attachedFileRow, { backgroundColor: colors.background }]}>
-                    {/* Show image thumbnail if it's an image, otherwise show icon */}
+                    
                     {attachedFile.mimeType?.startsWith('image/') ? (
                         <Image
                             source={{ uri: attachedFile.uri }}
@@ -86,7 +85,7 @@ export function ChatInput({
                     ) : (
                         <Ionicons name="document-attach-outline" size={20} color={colors.textSecondary} />
                     )}
-                    <Text style={[styles.attachedFileName, { color: colors.text }]} numberOfLines={1}>
+                    <Text style={[styles.attachedFileName, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
                         {attachedFile.name}
                     </Text>
                     <TouchableOpacity onPress={onRemoveAttachment} style={styles.removeButton}>
@@ -95,7 +94,7 @@ export function ChatInput({
                 </View>
             )}
             <View style={styles.inputRow}>
-                {/* Attach file button */}
+                
                 <TouchableOpacity
                     style={styles.inputActionButton}
                     onPress={onAttachFile}
@@ -105,7 +104,7 @@ export function ChatInput({
                 </TouchableOpacity>
 
                 <View style={styles.inputWithAutocomplete}>
-                    {/* Group autocomplete dropdown */}
+                    
                     {showGroupAutocomplete && groupSuggestions.length > 0 && (
                         <View style={[styles.autocompleteDropdown, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                             {groupSuggestions.map((suggestion, index) => (
@@ -133,7 +132,7 @@ export function ChatInput({
                     />
                 </View>
 
-                {/* Voice record button */}
+                
                 <TouchableOpacity
                     style={styles.inputActionButton}
                     onPress={onVoiceRecord}
@@ -146,7 +145,7 @@ export function ChatInput({
                     />
                 </TouchableOpacity>
 
-                {/* Send/Cancel button */}
+                
                 {isLoading ? (
                     <TouchableOpacity
                         style={[styles.sendButton, { backgroundColor: colors.error }]}
@@ -224,6 +223,7 @@ const styles = StyleSheet.create({
     attachedFileName: {
         flex: 1,
         fontSize: 14,
+        marginHorizontal: 8,
     },
     removeAttachment: {
         fontSize: 16,

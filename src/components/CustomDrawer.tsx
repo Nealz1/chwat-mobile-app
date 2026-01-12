@@ -72,13 +72,13 @@ export function CustomDrawer({ navigation }: DrawerContentComponentProps) {
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
-            {/* Header with Logo */}
+            
             <View style={[styles.header, { backgroundColor: '#a51d22' }]}>
                 <Image source={watLogo} style={styles.headerLogo} resizeMode="contain" />
                 <Text style={styles.headerTitle}>HELPDesk</Text>
             </View>
 
-            {/* User Info */}
+            
             {user ? (
                 <TouchableOpacity
                     style={[styles.userSection, { borderBottomColor: colors.border }]}
@@ -115,7 +115,7 @@ export function CustomDrawer({ navigation }: DrawerContentComponentProps) {
                 </TouchableOpacity>
             )}
 
-            {/* New Chat Button */}
+            
             <TouchableOpacity
                 style={[styles.newChatButton, { backgroundColor: colors.primary }]}
                 onPress={handleNewChat}
@@ -124,7 +124,7 @@ export function CustomDrawer({ navigation }: DrawerContentComponentProps) {
                 <Text style={styles.newChatText}>{t.chat?.newChat || 'Nowa rozmowa'}</Text>
             </TouchableOpacity>
 
-            {/* Search */}
+            
             <View style={[styles.searchContainer, { backgroundColor: colors.surface }]}>
                 <Text style={styles.searchIcon}>🔍</Text>
                 <TextInput
@@ -136,7 +136,7 @@ export function CustomDrawer({ navigation }: DrawerContentComponentProps) {
                 />
             </View>
 
-            {/* Navigation Items */}
+            
             <View style={styles.navSection}>
                 <TouchableOpacity
                     style={styles.navItem}
@@ -152,7 +152,7 @@ export function CustomDrawer({ navigation }: DrawerContentComponentProps) {
                 </TouchableOpacity>
             </View>
 
-            {/* Sessions List */}
+            
             <View style={styles.sessionsSection}>
                 {pinnedSessions.length > 0 && (
                     <>
@@ -208,7 +208,7 @@ export function CustomDrawer({ navigation }: DrawerContentComponentProps) {
                 />
             </View>
 
-            {/* Bottom Items */}
+            
             <View style={[styles.bottomSection, { borderTopColor: colors.border }]}>
                 <TouchableOpacity
                     style={styles.navItem}

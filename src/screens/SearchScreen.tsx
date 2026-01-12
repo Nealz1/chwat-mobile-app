@@ -59,10 +59,8 @@ export function SearchScreen({ navigation }: Props) {
         setHasSearched(true);
 
         try {
-            // Search in message content via API
             const messageResults = await chatService.searchInMessages(sessions, query);
 
-            // Also search in titles (for sessions without matching messages)
             const lowerQuery = query.toLowerCase();
             const titleResults: SearchResult[] = sessions
                 .filter(s =>
@@ -84,7 +82,6 @@ export function SearchScreen({ navigation }: Props) {
         }
     }, [sessions]);
 
-    // Debounced search
     useEffect(() => {
         const timer = setTimeout(() => {
             performSearch(searchQuery);
@@ -144,7 +141,7 @@ export function SearchScreen({ navigation }: Props) {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-            {/* Search Header */}
+            
             <View style={[styles.header, { borderBottomColor: colors.border }]}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Ionicons name="arrow-back" size={24} color={colors.text} />
@@ -167,7 +164,7 @@ export function SearchScreen({ navigation }: Props) {
                 </View>
             </View>
 
-            {/* Results */}
+            
             <View style={styles.content}>
                 {!searchQuery && (
                     <View style={styles.emptyState}>

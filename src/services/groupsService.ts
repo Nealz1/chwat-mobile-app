@@ -118,7 +118,6 @@ class GroupsService {
         }
     }
 
-    // Search groups by query (for autocomplete)
     async searchGroups(query: string, limit: number = 5): Promise<string[]> {
         try {
             const headers = await authService.getAuthHeaders();

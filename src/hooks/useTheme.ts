@@ -17,7 +17,6 @@ export interface ThemeColors {
     header: string;
 }
 
-// Matching web frontend colors
 const lightColors: ThemeColors = {
     primary: '#e67e22', // Orange accent like web
     background: '#ffffff',

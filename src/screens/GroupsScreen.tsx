@@ -165,7 +165,6 @@ export function GroupsScreen({ navigation }: Props) {
         );
     }
 
-    // Show group sessions view
     if (selectedGroup) {
         return (
             <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -199,7 +198,7 @@ export function GroupsScreen({ navigation }: Props) {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-            {/* Create Group Button */}
+            
             <TouchableOpacity
                 style={[styles.createButton, { backgroundColor: colors.primary }]}
                 onPress={() => setShowCreateModal(true)}
@@ -207,7 +206,7 @@ export function GroupsScreen({ navigation }: Props) {
                 <Text style={styles.createButtonText}>+ {t.createGroup}</Text>
             </TouchableOpacity>
 
-            {/* Groups List */}
+            
             {groups.length === 0 ? (
                 <View style={styles.emptyContainer}>
                     <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
@@ -226,7 +225,7 @@ export function GroupsScreen({ navigation }: Props) {
                 />
             )}
 
-            {/* Create Group Modal */}
+            
             <Modal
                 visible={showCreateModal}
                 transparent

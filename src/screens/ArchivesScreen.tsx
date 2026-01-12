@@ -33,7 +33,6 @@ export function ArchivesScreen({ navigation }: Props) {
         setLoading(true);
         try {
             const allSessions = await chatService.getSessions(true);
-            // Filter to show only archived sessions
             const archived = allSessions.filter(s => s.is_archived);
             setSessions(archived);
         } catch (error) {

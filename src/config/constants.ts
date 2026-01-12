@@ -1,7 +1,5 @@
-// API Configuration - Update this to your backend URL
 export const API_BASE_URL = 'http://10.70.147.127:8000';
 
-// AsyncStorage Keys (previously localStorage keys)
 export const STORAGE_KEYS = {
     DARK_MODE: 'darkMode',
     AUTH_TOKEN: 'auth_token',

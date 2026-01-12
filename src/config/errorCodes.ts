@@ -1,7 +1,3 @@
-/**
- * Authentication Error Codes
- * Consistent error handling across platforms
- */
 
 export const AUTH_ERROR_CODES = {
     USOS_LOGOUT: 'usos_logout',

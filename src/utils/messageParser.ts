@@ -1,7 +1,3 @@
-/**
- * Message Parser Utilities
- * Parse messages for links, emails, and special URLs
- */
 
 import { Linking } from 'react-native';
 
@@ -12,9 +8,6 @@ export interface MessagePart {
     icon?: string;
 }
 
-/**
- * Parse message text and extract links
- */
 export const parseMessageForLinks = (text: string): MessagePart[] => {
     if (!text) return [{ type: 'text', content: '' }];
 
@@ -42,7 +35,6 @@ export const parseMessageForLinks = (text: string): MessagePart[] => {
 
     collectMatches(text, plainUrlRegex, (m) => {
         const url = sanitizeUrl(m[1] || m[0]);
-        // Skip if overlapping existing span
         if (spans.some(s => m.index >= s.start && m.index < s.end)) return;
         spans.push({ start: m.index, end: m.index + m[0].length, part: { type: 'link', content: inferLabelFromUrl(url) || url, url } });
     });
@@ -108,9 +100,6 @@ export const isEmailUrl = (url: string): boolean => {
     return url.startsWith('mailto:');
 };
 
-/**
- * Open a URL using React Native Linking
- */
 export const openUrl = async (url: string): Promise<void> => {
     try {
         const supported = await Linking.canOpenURL(url);

@@ -48,7 +48,6 @@ export function MessageItem({
     onFeedback,
     onNavigateVersion,
 }: MessageItemProps) {
-    // Welcome message (first message when no chat history) - centered, no bubble
     const isWelcomeMessage = index === 0 && messagesLength === 1 && item.sender === 'bot';
 
     if (isWelcomeMessage) {
@@ -89,7 +88,7 @@ export function MessageItem({
                     }}>
                         {item.text}
                     </Markdown>
-                    {/* Action buttons */}
+                    
                     <View style={styles.messageActions}>
                         <TouchableOpacity
                             style={styles.actionButton}
@@ -147,7 +146,7 @@ export function MessageItem({
                                 </TouchableOpacity>
                             </>
                         )}
-                        {/* Version Navigator */}
+                        
                         {item.siblingCount && item.siblingCount > 1 && (
                             <View style={styles.versionNavigator}>
                                 <TouchableOpacity
@@ -213,11 +212,19 @@ const styles = StyleSheet.create({
     },
     messageActions: {
         flexDirection: 'row',
-        marginTop: 8,
-        gap: 4,
+        flexWrap: 'wrap',
+        marginTop: 12,
+        paddingTop: 8,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: 'rgba(128, 128, 128, 0.2)',
+        gap: 8,
     },
     actionButton: {
-        padding: 6,
+        padding: 8,
+        minWidth: 32,
+        minHeight: 32,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     versionNavigator: {
         flexDirection: 'row',

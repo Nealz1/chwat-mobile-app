@@ -62,7 +62,7 @@ export function LoginScreen({ navigation }: Props) {
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.content}>
-                {/* Modern Icon */}
+                
                 <View style={[styles.iconContainer, { backgroundColor: colors.primary + '15' }]}>
                     <Ionicons name="school-outline" size={48} color={colors.primary} />
                 </View>
@@ -75,7 +75,7 @@ export function LoginScreen({ navigation }: Props) {
                     {t.subtitle}
                 </Text>
 
-                {/* Primary Action Button */}
+                
                 <TouchableOpacity
                     style={[styles.primaryButton, { backgroundColor: colors.primary }]}
                     onPress={handleOAuthLogin}
@@ -89,7 +89,7 @@ export function LoginScreen({ navigation }: Props) {
                     )}
                 </TouchableOpacity>
 
-                {/* Skip Link */}
+                
                 <TouchableOpacity
                     style={styles.skipButton}
                     onPress={() => navigation.goBack()}

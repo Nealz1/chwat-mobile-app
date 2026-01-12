@@ -78,7 +78,6 @@ class ChatService {
         sessionId?: number
     ): Promise<SendMessageResponse> {
         const headers = await authService.getAuthHeaders();
-        // Remove Content-Type to let fetch set it with boundary for FormData
         delete headers['Content-Type'];
 
         const formData = new FormData();
@@ -87,10 +86,8 @@ class ChatService {
             formData.append('session_id', String(sessionId));
         }
 
-        // Get filename from URI
         const filename = imageUri.split('/').pop() || `image_${Date.now()}.jpg`;
 
-        // Append file (backend expects 'file' field name)
         formData.append('file', {
             uri: imageUri,
             type: mimeType,
@@ -113,7 +110,6 @@ class ChatService {
     }
 
     async sendGuestMessage(message: string): Promise<{ response: string }> {
-        // Use the same endpoint as web frontend (streaming returns full response)
         const response = await fetch(`${API_BASE_URL}/chat/stream`, {
             method: 'POST',
             headers: {
@@ -126,7 +122,6 @@ class ChatService {
             throw new Error('Failed to send guest message');
         }
 
-        // For non-streaming, read the SSE response and extract full_response
         const text = await response.text();
         const lines = text.split('\n');
         let fullResponse = '';
@@ -139,7 +134,6 @@ class ChatService {
                         fullResponse = data.full_response;
                     }
                 } catch (e) {
-                    // Skip unparseable lines
                 }
             }
         }
@@ -187,7 +181,6 @@ class ChatService {
         }
     }
 
-    // Archive/Unarchive
     async archiveSession(sessionId: number): Promise<boolean> {
         try {
             const headers = await authService.getAuthHeaders();
@@ -222,7 +215,6 @@ class ChatService {
         }
     }
 
-    // Pin/Unpin
     async pinSession(sessionId: number, isPinned: boolean): Promise<boolean> {
         try {
             const headers = await authService.getAuthHeaders();
@@ -244,7 +236,6 @@ class ChatService {
         }
     }
 
-    // Move session to group
     async moveToGroup(sessionId: number, groupId: number | null): Promise<boolean> {
         try {
             const headers = await authService.getAuthHeaders();
@@ -266,7 +257,6 @@ class ChatService {
         }
     }
 
-    // Get groups list
     async getGroups(): Promise<{ id: number; name: string }[]> {
         try {
             const headers = await authService.getAuthHeaders();
@@ -280,9 +270,7 @@ class ChatService {
         }
     }
 
-    // ==================== MESSAGE TREE/VERSIONING METHODS ====================
 
-    // Get conversation tree with message versions
     async getConversationTree(sessionId: number): Promise<any[]> {
         try {
             const headers = await authService.getAuthHeaders();
@@ -299,7 +287,6 @@ class ChatService {
         }
     }
 
-    // Get sibling messages for version navigation
     async getMessageSiblings(nodeId: number): Promise<any[]> {
         try {
             const headers = await authService.getAuthHeaders();
@@ -316,7 +303,6 @@ class ChatService {
         }
     }
 
-    // Set active version of a message
     async setActiveVersion(sessionId: number, parentNodeId: number, childId: number): Promise<boolean> {
         try {
             const headers = await authService.getAuthHeaders();
@@ -338,7 +324,6 @@ class ChatService {
         }
     }
 
-    // Regenerate bot response (creates new version)
     async regenerateResponse(sessionId: number, parentNodeId: number): Promise<any> {
         try {
             const headers = await authService.getAuthHeaders();
@@ -361,7 +346,6 @@ class ChatService {
         }
     }
 
-    // Edit user message (creates new branch)
     async editMessage(sessionId: number, nodeId: number, content: string): Promise<any> {
         try {
             const headers = await authService.getAuthHeaders();
@@ -384,7 +368,6 @@ class ChatService {
         }
     }
 
-    // Search in messages across sessions
     async searchInMessages(
         sessions: ChatSession[],
         query: string
@@ -392,7 +375,6 @@ class ChatService {
         const results: { sessionId: number; sessionTitle: string; matchedMessage: string; updatedAt: string }[] = [];
         const lowerQuery = query.toLowerCase();
 
-        // Search each session's messages
         const searchPromises = sessions.map(async (session) => {
             try {
                 const messages = await this.getSessionMessages(session.id);

@@ -65,7 +65,6 @@ export function ChatScreen({ route, navigation }: Props) {
     const [attachmentModalVisible, setAttachmentModalVisible] = useState(false);
     const abortControllerRef = useRef<AbortController | null>(null);
 
-    // Use group autocomplete hook
     const {
         groupSuggestions,
         showGroupAutocomplete,
@@ -73,7 +72,6 @@ export function ChatScreen({ route, navigation }: Props) {
         insertGroupSuggestion,
     } = useGroupAutocomplete();
 
-    // Keyboard listeners for Android (keyboardHeight state already declared above)
 
     useEffect(() => {
         const showSub = Keyboard.addListener(
@@ -104,7 +102,6 @@ export function ChatScreen({ route, navigation }: Props) {
         }
     };
 
-    // Save draft when input changes
     useEffect(() => {
         const saveDraft = async () => {
             try {
@@ -121,7 +118,6 @@ export function ChatScreen({ route, navigation }: Props) {
         return () => clearTimeout(timeoutId);
     }, [inputText]);
 
-    // Keyboard listener for Android
     useEffect(() => {
         const showSub = Keyboard.addListener('keyboardDidShow', (e) => {
             setKeyboardHeight(e.endCoordinates.height);
@@ -135,7 +131,6 @@ export function ChatScreen({ route, navigation }: Props) {
         };
     }, []);
 
-    // Handle navigation with sessionId (from search, history, etc.)
     useEffect(() => {
         const sessionId = route.params?.sessionId;
         if (sessionId) {
@@ -144,7 +139,6 @@ export function ChatScreen({ route, navigation }: Props) {
         }
     }, [route.params?.sessionId]);
 
-    // Handle "Nowa rozmowa" - reset chat when newChat param changes (but not if sessionId was provided)
     useEffect(() => {
         if (route.params?.newChat && !route.params?.sessionId) {
             setCurrentSessionId(undefined);
@@ -154,7 +148,6 @@ export function ChatScreen({ route, navigation }: Props) {
         }
     }, [route.params?.newChat, route.params?.sessionId, t]);
 
-    // Set up header with hamburger menu
     useEffect(() => {
         navigation.setOptions({
             headerLeft: () => (
@@ -175,7 +168,6 @@ export function ChatScreen({ route, navigation }: Props) {
 
     const loadSessionMessages = async (sessionId: number) => {
         try {
-            // Use conversation tree to get sibling info for version navigation
             const tree = await chatService.getConversationTree(sessionId);
             if (tree && tree.length > 0) {
                 const converted: Message[] = tree.map((node: any) => ({
@@ -189,7 +181,6 @@ export function ChatScreen({ route, navigation }: Props) {
                 }));
                 setMessages(converted);
             } else {
-                // Fallback to regular messages if tree is empty
                 const msgs = await chatService.getSessionMessages(sessionId);
                 const converted: Message[] = msgs.map(m => ({
                     sender: m.role === 'user' ? 'user' : 'bot',
@@ -208,7 +199,6 @@ export function ChatScreen({ route, navigation }: Props) {
     const handleSend = useCallback(async () => {
         if (!inputText.trim() || isLoading) return;
 
-        // Haptic feedback on send
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
         const messageText = inputText.trim();
@@ -226,7 +216,6 @@ export function ChatScreen({ route, navigation }: Props) {
             let response: SendMessageResponse | { response: string };
 
             if (user) {
-                // Check if we have an image attachment
                 if (currentAttachment && currentAttachment.mimeType?.startsWith('image/')) {
                     response = await chatService.sendMessageWithImage(
                         messageText,
@@ -271,7 +260,6 @@ export function ChatScreen({ route, navigation }: Props) {
             abortControllerRef.current = null;
         }
         setIsLoading(false);
-        // Remove the loading message
         setMessages(prev => {
             const lastMsg = prev[prev.length - 1];
             if (lastMsg?.isLoading) {
@@ -297,12 +285,10 @@ export function ChatScreen({ route, navigation }: Props) {
     const handleRegenerateResponse = useCallback(async (messageIndex: number) => {
         if (isLoading || messageIndex < 1) return;
 
-        // Get the user message before this bot response
         const userMessage = messages[messageIndex - 1];
         if (userMessage?.sender !== 'user') return;
 
         setIsLoading(true);
-        // Replace bot message with loading
         setMessages(prev => {
             const newMessages = [...prev];
             newMessages[messageIndex] = { sender: 'bot', text: '', isLoading: true };
@@ -355,7 +341,6 @@ export function ChatScreen({ route, navigation }: Props) {
         handleCancelEdit();
         setIsLoading(true);
 
-        // Update user message and replace following bot response with loading
         setMessages(prev => {
             const newMessages = [...prev];
             newMessages[editingIndex] = { sender: 'user', text: editedUserMessage };
@@ -401,11 +386,9 @@ export function ChatScreen({ route, navigation }: Props) {
     const handleFeedback = useCallback(async (nodeId: number, feedbackType: string) => {
         if (!user) return;
 
-        // Find the message with this nodeId and toggle feedback
         setMessages(prev => prev.map(msg => {
             if (msg.nodeId === nodeId) {
                 const newFeedback = msg.feedback === feedbackType ? 'neutral' : feedbackType;
-                // Submit to server
                 authService.submitFeedback(nodeId, newFeedback);
                 return { ...msg, feedback: newFeedback };
             }
@@ -413,7 +396,6 @@ export function ChatScreen({ route, navigation }: Props) {
         }));
     }, [user]);
 
-    // Handle version navigation (switch between message siblings)
     const handleNavigateVersion = useCallback(async (index: number, direction: 'prev' | 'next') => {
         if (!currentSessionId) return;
 
@@ -450,7 +432,6 @@ export function ChatScreen({ route, navigation }: Props) {
         }
     }, [currentSessionId, messages]);
 
-    // Handle file attachment - show modal
     const handleAttachFile = useCallback(() => {
         setAttachmentModalVisible(true);
     }, []);
@@ -515,10 +496,8 @@ export function ChatScreen({ route, navigation }: Props) {
         }
     }, []);
 
-    // Handle voice recording using expo-av
     const handleVoiceRecord = useCallback(async () => {
         if (isRecording && recording) {
-            // Stop recording
             try {
                 await recording.stopAndUnloadAsync();
                 await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
@@ -528,7 +507,6 @@ export function ChatScreen({ route, navigation }: Props) {
                 setIsRecording(false);
 
                 if (uri) {
-                    // Send to backend for transcription
                     try {
                         const transcribedText = await SpeechService.transcribe(uri);
                         if (transcribedText) {
@@ -551,7 +529,6 @@ export function ChatScreen({ route, navigation }: Props) {
                 Alert.alert('Błąd', 'Nie udało się zakończyć nagrywania');
             }
         } else {
-            // Start recording
             try {
                 const permission = await Audio.requestPermissionsAsync();
                 if (!permission.granted) {
@@ -579,7 +556,6 @@ export function ChatScreen({ route, navigation }: Props) {
     }, [isRecording, recording]);
 
     const handleSpeak = useCallback((text: string) => {
-        // Remove markdown formatting for cleaner TTS
         const cleanText = text
             .replace(/\*\*(.*?)\*\*/g, '$1')  // Bold
             .replace(/\*(.*?)\*/g, '$1')      // Italic
@@ -593,17 +569,14 @@ export function ChatScreen({ route, navigation }: Props) {
         });
     }, [language]);
 
-    // Handle input change with group autocomplete (using hook)
     const handleInputChange = useCallback((text: string) => {
         handleGroupInputChange(text, setInputText);
     }, [handleGroupInputChange]);
 
-    // Handle inserting group suggestion
     const handleInsertGroupSuggestion = useCallback((suggestion: string) => {
         insertGroupSuggestion(suggestion, inputText, setInputText);
     }, [insertGroupSuggestion, inputText]);
 
-    // Explain Decision - call API to get explanation for this bot response
     const handleExplain = useCallback(async (botMsgIndex: number) => {
         const botMessage = messages[botMsgIndex];
         if (!botMessage || botMessage.sender !== 'bot') return;
@@ -652,7 +625,7 @@ export function ChatScreen({ route, navigation }: Props) {
                 behavior="padding"
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
             >
-                {/* Messages List */}
+                
                 <FlatList
                     data={messages}
                     renderItem={renderMessage}
@@ -662,7 +635,7 @@ export function ChatScreen({ route, navigation }: Props) {
                     keyboardShouldPersistTaps="handled"
                 />
 
-                {/* Input Area */}
+                
                 <ChatInput
                     inputText={inputText}
                     onInputChange={handleInputChange}
@@ -683,7 +656,7 @@ export function ChatScreen({ route, navigation }: Props) {
                 />
             </KeyboardAvoidingView>
 
-            {/* Edit Message Modal */}
+            
             <Modal
                 visible={editingIndex !== null}
                 transparent
@@ -721,7 +694,7 @@ export function ChatScreen({ route, navigation }: Props) {
                 </View>
             </Modal>
 
-            {/* Attachment Options Modal */}
+            
             <Modal
                 visible={attachmentModalVisible}
                 transparent
@@ -776,7 +749,7 @@ export function ChatScreen({ route, navigation }: Props) {
                 </TouchableOpacity>
             </Modal>
 
-            {/* Explain Decision Modal */}
+            
             <Modal
                 visible={explainModalVisible}
                 transparent

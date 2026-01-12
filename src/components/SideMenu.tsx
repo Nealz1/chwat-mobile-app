@@ -49,7 +49,6 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
     useEffect(() => {
         if (visible) {
             loadData();
-            // Reset to offscreen and animate in
             slideAnim.setValue(-DRAWER_WIDTH);
             Animated.timing(slideAnim, {
                 toValue: 0,
@@ -59,7 +58,6 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
         }
     }, [visible]);
 
-    // Handle close with animation
     const handleClose = useCallback(() => {
         Animated.timing(slideAnim, {
             toValue: -DRAWER_WIDTH,
@@ -88,7 +86,6 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
         }
     };
 
-    // Pull-to-refresh handler with haptic feedback
     const onRefresh = useCallback(async () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setRefreshing(true);
@@ -98,7 +95,6 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
 
     const handleNewChat = () => {
         handleClose();
-        // Pass a unique key to force Chat screen to reset even if already on it
         navigation.navigate('Chat', { newChat: Date.now() });
     };
 
@@ -112,7 +108,6 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
         navigation.navigate(screen);
     };
 
-    // Session action handlers
     const handleSessionLongPress = (session: ChatSession) => {
         setSelectedSession(session);
         setActionMenuVisible(true);
@@ -203,10 +198,8 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
         setActionMenuVisible(false);
 
         try {
-            // Get session messages
             const messages = await chatService.getSessionMessages(selectedSession.id);
 
-            // Format as text
             let content = `# ${selectedSession.title}\n`;
             content += `${language === 'pl' ? 'Eksportowano' : 'Exported'}: ${new Date().toLocaleString()}\n\n`;
 
@@ -217,7 +210,6 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                 content += `## ${role}\n${msg.content}\n\n`;
             });
 
-            // Use React Native Share API
             await Share.share({
                 message: content,
                 title: selectedSession.title,
@@ -234,7 +226,6 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
         s.title.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    // Group sessions by date
     const today = new Date();
     const todaySessions = filteredSessions.filter(s => {
         const d = new Date(s.updated_at);
@@ -265,7 +256,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                     ]}
                 >
                     <Pressable style={styles.drawerContent}>
-                        {/* Header */}
+                        
                         <View style={styles.header}>
                             <Text style={[styles.headerIcon, { color: colors.text }]}>⌂</Text>
                             <Text style={[styles.headerTitle, { color: colors.text }]}>HELPDesk</Text>
@@ -282,7 +273,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                 />
                             }
                         >
-                            {/* New Chat Button */}
+                            
                             <TouchableOpacity
                                 style={[styles.outlinedButton, { borderColor }]}
                                 onPress={handleNewChat}
@@ -293,7 +284,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                             </TouchableOpacity>
 
 
-                            {/* Search - opens dedicated search screen */}
+                            
                             <TouchableOpacity
                                 style={[styles.searchContainer, { borderColor }]}
                                 onPress={() => navigateTo('Search')}
@@ -304,7 +295,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                 </Text>
                             </TouchableOpacity>
 
-                            {/* Groups */}
+                            
                             <TouchableOpacity
                                 style={[styles.outlinedButton, { borderColor }]}
                                 onPress={() => navigateTo('Groups')}
@@ -315,7 +306,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                 </Text>
                             </TouchableOpacity>
 
-                            {/* Section: DZIŚ */}
+                            
                             {todaySessions.length > 0 && (
                                 <>
                                     <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
@@ -342,7 +333,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                 </>
                             )}
 
-                            {/* Section: OSTATNIE 30 DNI */}
+                            
                             {recentSessions.length > 0 && (
                                 <>
                                     <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
@@ -370,9 +361,9 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                             )}
                         </ScrollView>
 
-                        {/* Bottom: Menu items always visible like USOS */}
+                        
                         <View style={[styles.bottomSection, { borderTopColor: borderColor }]}>
-                            {/* Settings */}
+                            
                             <TouchableOpacity
                                 style={styles.menuItem}
                                 onPress={() => navigateTo('Settings')}
@@ -383,7 +374,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                 </Text>
                             </TouchableOpacity>
 
-                            {/* Archives - only for logged in users */}
+                            
                             {user && (
                                 <TouchableOpacity
                                     style={styles.menuItem}
@@ -396,7 +387,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                 </TouchableOpacity>
                             )}
 
-                            {/* Help / About */}
+                            
                             <TouchableOpacity
                                 style={styles.menuItem}
                                 onPress={() => navigateTo('Help')}
@@ -407,7 +398,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                 </Text>
                             </TouchableOpacity>
 
-                            {/* Login/Logout */}
+                            
                             {user ? (
                                 <TouchableOpacity
                                     style={styles.menuItem}
@@ -440,7 +431,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                 </Animated.View>
             </Pressable>
 
-            {/* Session Action Menu Modal */}
+            
             <Modal
                 visible={actionMenuVisible}
                 transparent
@@ -456,7 +447,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                             {selectedSession?.title}
                         </Text>
 
-                        {/* Rename - using Alert.prompt which works on iOS, fallback for Android */}
+                        
                         <TouchableOpacity
                             style={styles.actionMenuItem}
                             onPress={handleRenameSession}
@@ -523,7 +514,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                 </Pressable>
             </Modal>
 
-            {/* Group Picker Modal */}
+            
             <Modal
                 visible={groupPickerVisible}
                 transparent
@@ -662,6 +653,7 @@ const styles = StyleSheet.create({
     sessionTitle: {
         fontSize: 15,
         flex: 1,
+        marginRight: 8,
     },
     chevron: {
         fontSize: 18,

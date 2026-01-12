@@ -99,14 +99,14 @@ export function HelpScreen({ navigation }: Props) {
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <ScrollView contentContainerStyle={styles.content}>
-                {/* Intro */}
+                
                 <Text style={[styles.intro, { color: colors.textSecondary }]}>
                     {isPl
                         ? 'Jestem Twoim asystentem studenckim WAT. Oto w czym mogę Ci pomóc:'
                         : "I'm your WAT student assistant. Here's what I can help you with:"}
                 </Text>
 
-                {/* Capabilities */}
+                
                 <View style={styles.capabilitiesList}>
                     {capabilities.map((cap, index) => (
                         <View
@@ -126,7 +126,7 @@ export function HelpScreen({ navigation }: Props) {
                     ))}
                 </View>
 
-                {/* Examples */}
+                
                 <View style={[styles.examplesSection, { backgroundColor: colors.surface }]}>
                     <Text style={[styles.examplesTitle, { color: colors.text }]}>
                         {isPl ? 'Przykładowe pytania:' : 'Example Questions:'}
@@ -137,7 +137,6 @@ export function HelpScreen({ navigation }: Props) {
                             style={[styles.exampleItem, { borderColor: colors.border }]}
                             onPress={() => {
                                 navigation.navigate('Chat', {});
-                                // Could pre-fill the input with the example
                             }}
                         >
                             <Text style={[styles.exampleText, { color: colors.primary }]}>

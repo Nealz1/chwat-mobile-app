@@ -1,7 +1,3 @@
-/**
- * Streaming Service for React Native
- * Handles Server-Sent Events (SSE) for real-time chat responses
- */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL, STORAGE_KEYS } from '../config/constants';
@@ -31,10 +27,6 @@ export interface StreamOptions {
     useAgents?: boolean;
 }
 
-/**
- * Stream chat response using SSE (Server-Sent Events)
- * React Native supports ReadableStream in newer versions
- */
 export async function streamChatResponse(options: StreamOptions): Promise<void> {
     const {
         message,
@@ -131,7 +123,6 @@ export async function streamChatResponse(options: StreamOptions): Promise<void> 
             }
         }
     } catch (error) {
-        // Handle abort
         if (error instanceof Error && error.name === 'AbortError') {
             return;
         }
@@ -142,18 +133,10 @@ export async function streamChatResponse(options: StreamOptions): Promise<void> 
     }
 }
 
-/**
- * Check if streaming is supported on this device
- * React Native Hermes engine supports ReadableStream since version 0.71
- */
 export function isStreamingSupported(): boolean {
     return typeof ReadableStream !== 'undefined' && typeof TextDecoder !== 'undefined';
 }
 
-/**
- * Fallback: Non-streaming chat response
- * Use this when streaming is not supported
- */
 export async function sendChatMessageFallback(
     message: string,
     sessionId?: number | null

@@ -14,25 +14,20 @@ export const useGroupAutocomplete = (): UseGroupAutocompleteReturn => {
     const [showGroupAutocomplete, setShowGroupAutocomplete] = useState(false);
     const groupSearchTimeout = useRef<NodeJS.Timeout | null>(null);
 
-    // Detect WCY pattern for group autocomplete
     const detectGroupPattern = useCallback((text: string): string | null => {
         const match = text.match(/(?:^|\s)([Ww][Cc][Yy][a-zA-Z0-9]*)$/);
         return match ? match[1].toUpperCase() : null;
     }, []);
 
-    // Handle input change with group pattern detection
     const handleInputChange = useCallback((text: string, setInputText: (t: string) => void) => {
         setInputText(text);
 
-        // Clear previous timeout
         if (groupSearchTimeout.current) {
             clearTimeout(groupSearchTimeout.current);
         }
 
-        // Detect WCY pattern
         const pattern = detectGroupPattern(text);
         if (pattern && pattern.length >= 3) {
-            // Debounce search
             groupSearchTimeout.current = setTimeout(async () => {
                 try {
                     const groups = await groupsService.searchGroups(pattern);
@@ -50,7 +45,6 @@ export const useGroupAutocomplete = (): UseGroupAutocompleteReturn => {
         }
     }, [detectGroupPattern]);
 
-    // Insert selected group suggestion
     const insertGroupSuggestion = useCallback((
         suggestion: string,
         inputText: string,
@@ -66,7 +60,6 @@ export const useGroupAutocomplete = (): UseGroupAutocompleteReturn => {
         setShowGroupAutocomplete(false);
     }, []);
 
-    // Clear suggestions
     const clearSuggestions = useCallback(() => {
         setGroupSuggestions([]);
         setShowGroupAutocomplete(false);
