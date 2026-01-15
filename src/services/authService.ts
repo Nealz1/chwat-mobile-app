@@ -23,7 +23,20 @@ class AuthService {
         await AsyncStorage.removeItem(this.TOKEN_KEY);
     }
 
+    private readonly CAS_LOGOUT_URL = 'https://logowanie.wat.edu.pl/cas/logout';
+
+    async clearCasSession(): Promise<void> {
+        try {
+            await WebBrowser.openBrowserAsync(this.CAS_LOGOUT_URL, {
+                dismissButtonStyle: 'close',
+                showInRecents: false,
+            });
+        } catch { }
+    }
+
     async loginWithOAuth(): Promise<string | null> {
+        await this.clearCasSession();
+
         const redirectUrl = Linking.createURL('auth');
 
         const response = await fetch(
@@ -84,6 +97,8 @@ class AuthService {
         }
 
         await this.clearAllUserData();
+
+        await this.clearCasSession();
     }
 
     async clearAllUserData(): Promise<void> {
