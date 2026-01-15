@@ -1,3 +1,30 @@
+export interface ThinkingStep {
+    type: string;
+    title: string;
+    detail: string;
+    duration_ms: number;
+    agent: string | null;
+    status: string;
+}
+
+export interface ThinkingStepsData {
+    type: string;
+    steps: ThinkingStep[];
+    total_duration_ms: number;
+}
+
+export interface Suggestion {
+    text: string;
+    query: string;
+    icon: string;
+    category: string;
+}
+
+export interface SuggestionsData {
+    type: string;
+    suggestions: Suggestion[];
+}
+
 export interface Message {
     sender: "user" | "bot";
     text: string;
@@ -8,6 +35,8 @@ export interface Message {
     isLoading?: boolean;
     isStreaming?: boolean;
     feedback?: string | null;
+    thinking_steps?: ThinkingStepsData;
+    suggestions?: SuggestionsData;
 }
 
 export interface MessageNode {

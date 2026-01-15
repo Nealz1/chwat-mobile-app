@@ -9,6 +9,8 @@ import {
 import Markdown from 'react-native-markdown-display';
 import { Ionicons } from '@expo/vector-icons';
 import type { Message, User } from '../types';
+import { ThinkingSteps } from './ThinkingSteps';
+import { Suggestions } from './Suggestions';
 
 interface MessageItemProps {
     item: Message;
@@ -30,6 +32,7 @@ interface MessageItemProps {
     onExplain: (index: number) => void;
     onFeedback: (nodeId: number, type: 'positive' | 'negative') => void;
     onNavigateVersion: (index: number, direction: 'prev' | 'next') => void;
+    onSuggestionPress?: (query: string) => void;
 }
 
 export function MessageItem({
@@ -47,6 +50,7 @@ export function MessageItem({
     onExplain,
     onFeedback,
     onNavigateVersion,
+    onSuggestionPress,
 }: MessageItemProps) {
     const isWelcomeMessage = index === 0 && messagesLength === 1 && item.sender === 'bot';
 
@@ -88,7 +92,16 @@ export function MessageItem({
                     }}>
                         {item.text}
                     </Markdown>
-                    
+
+                    {item.sender === 'bot' && item.thinking_steps && (
+                        <ThinkingSteps data={item.thinking_steps} />
+                    )}
+                    {item.sender === 'bot' && item.suggestions && onSuggestionPress && (
+                        <Suggestions
+                            data={item.suggestions}
+                            onSuggestionPress={onSuggestionPress}
+                        />
+                    )}
                     <View style={styles.messageActions}>
                         <TouchableOpacity
                             style={styles.actionButton}
@@ -146,7 +159,7 @@ export function MessageItem({
                                 </TouchableOpacity>
                             </>
                         )}
-                        
+
                         {item.siblingCount && item.siblingCount > 1 && (
                             <View style={styles.versionNavigator}>
                                 <TouchableOpacity
