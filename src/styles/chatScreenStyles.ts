@@ -1,0 +1,251 @@
+import { StyleSheet } from 'react-native';
+
+export const chatScreenStyles = StyleSheet.create({
+    container: {
+        flex: 1,
+    },
+    menuButton: {
+        padding: 8,
+        marginLeft: 8,
+    },
+    menuButtonText: {
+        fontSize: 24,
+        color: '#FFFFFF',
+    },
+    messagesList: {
+        padding: 16,
+        paddingBottom: 8,
+    },
+    welcomeMessageContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 32,
+        paddingHorizontal: 24,
+    },
+    welcomeMessageText: {
+        fontSize: 20,
+        fontWeight: '500',
+        textAlign: 'center',
+        lineHeight: 28,
+    },
+    messageContainer: {
+        maxWidth: '85%',
+        padding: 14,
+        paddingHorizontal: 18,
+        borderRadius: 20,
+        marginBottom: 8,
+    },
+    userMessage: {
+        alignSelf: 'flex-end',
+    },
+    botMessage: {
+        alignSelf: 'flex-start',
+    },
+    inputContainer: {
+        flexDirection: 'column',
+        padding: 12,
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(0,0,0,0.1)',
+    },
+    inputRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+    },
+    attachedFileRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 8,
+        marginBottom: 8,
+    },
+    attachedFileName: {
+        flex: 1,
+        fontSize: 14,
+    },
+    removeAttachment: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        paddingLeft: 12,
+    },
+    inputActionButton: {
+        width: 40,
+        height: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    inputActionIcon: {
+        fontSize: 22,
+        fontWeight: 'bold',
+    },
+    input: {
+        flex: 1,
+        borderRadius: 20,
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        maxHeight: 120,
+        fontSize: 16,
+    },
+    sendButton: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginLeft: 8,
+    },
+    sendButtonText: {
+        color: '#FFFFFF',
+        fontSize: 18,
+    },
+    newChatButton: {
+        margin: 12,
+        padding: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+    },
+    newChatText: {
+        color: '#FFFFFF',
+        fontWeight: '600',
+        fontSize: 16,
+    },
+    messageActions: {
+        flexDirection: 'row',
+        justifyContent: 'flex-start',
+        marginTop: 12,
+        paddingTop: 8,
+        gap: 4,
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        width: '100%',
+    },
+    actionButton: {
+        padding: 6,
+    },
+    actionIcon: {
+        fontSize: 14,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    modalContent: {
+        width: '100%',
+        borderRadius: 12,
+        padding: 20,
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        marginBottom: 16,
+    },
+    editInput: {
+        borderWidth: 1,
+        borderRadius: 8,
+        padding: 12,
+        minHeight: 100,
+        textAlignVertical: 'top',
+        fontSize: 16,
+        marginBottom: 16,
+    },
+    modalButtons: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        gap: 12,
+    },
+    modalButton: {
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+    },
+    explainLabel: {
+        fontSize: 14,
+        marginBottom: 8,
+    },
+    explainText: {
+        fontSize: 16,
+        padding: 12,
+        borderRadius: 8,
+        lineHeight: 22,
+    },
+    versionNavigator: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginLeft: 12,
+        gap: 2,
+    },
+    versionButton: {
+        padding: 4,
+    },
+    versionText: {
+        fontSize: 12,
+        minWidth: 30,
+        textAlign: 'center',
+    },
+    inputWithAutocomplete: {
+        flex: 1,
+        position: 'relative',
+    },
+    autocompleteDropdown: {
+        position: 'absolute',
+        bottom: '100%',
+        left: 0,
+        right: 0,
+        marginBottom: 4,
+        borderRadius: 8,
+        borderWidth: 1,
+        maxHeight: 200,
+        zIndex: 100,
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
+    },
+    autocompleteItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 12,
+        borderBottomWidth: 1,
+        gap: 8,
+    },
+    autocompleteText: {
+        fontSize: 14,
+    },
+    attachmentModal: {
+        width: '80%',
+        borderRadius: 16,
+        padding: 20,
+        alignItems: 'center',
+    },
+    attachmentTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        marginBottom: 20,
+    },
+    attachmentOptions: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        width: '100%',
+    },
+    attachmentOption: {
+        alignItems: 'center',
+        padding: 12,
+    },
+    attachmentIconContainer: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    attachmentOptionText: {
+        fontSize: 13,
+        fontWeight: '500',
+    },
+});
