@@ -256,7 +256,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                     ]}
                 >
                     <Pressable style={styles.drawerContent}>
-                        
+
                         <View style={styles.header}>
                             <Text style={[styles.headerIcon, { color: colors.text }]}>⌂</Text>
                             <Text style={[styles.headerTitle, { color: colors.text }]}>HELPDesk</Text>
@@ -273,7 +273,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                 />
                             }
                         >
-                            
+
                             <TouchableOpacity
                                 style={[styles.outlinedButton, { borderColor }]}
                                 onPress={handleNewChat}
@@ -284,7 +284,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                             </TouchableOpacity>
 
 
-                            
+
                             <TouchableOpacity
                                 style={[styles.searchContainer, { borderColor }]}
                                 onPress={() => navigateTo('Search')}
@@ -295,7 +295,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                 </Text>
                             </TouchableOpacity>
 
-                            
+
                             <TouchableOpacity
                                 style={[styles.outlinedButton, { borderColor }]}
                                 onPress={() => navigateTo('Groups')}
@@ -306,7 +306,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                 </Text>
                             </TouchableOpacity>
 
-                            
+
                             {todaySessions.length > 0 && (
                                 <>
                                     <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
@@ -333,7 +333,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                 </>
                             )}
 
-                            
+
                             {recentSessions.length > 0 && (
                                 <>
                                     <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
@@ -361,9 +361,9 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                             )}
                         </ScrollView>
 
-                        
+
                         <View style={[styles.bottomSection, { borderTopColor: borderColor }]}>
-                            
+
                             <TouchableOpacity
                                 style={styles.menuItem}
                                 onPress={() => navigateTo('Settings')}
@@ -374,7 +374,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                 </Text>
                             </TouchableOpacity>
 
-                            
+
                             {user && (
                                 <TouchableOpacity
                                     style={styles.menuItem}
@@ -387,7 +387,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                 </TouchableOpacity>
                             )}
 
-                            
+
                             <TouchableOpacity
                                 style={styles.menuItem}
                                 onPress={() => navigateTo('Help')}
@@ -398,7 +398,18 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                 </Text>
                             </TouchableOpacity>
 
-                            
+                            {/* Canteen Form */}
+                            <TouchableOpacity
+                                style={styles.menuItem}
+                                onPress={() => navigateTo('CanteenForm')}
+                            >
+                                <Ionicons name="restaurant-outline" size={20} color={colors.text} style={styles.menuItemIcon} />
+                                <Text style={[styles.menuItemText, { color: colors.text }]}>
+                                    {language === 'pl' ? 'Dodaj Menu' : 'Add Menu'}
+                                </Text>
+                            </TouchableOpacity>
+
+                            {/* Login/Logout */}
                             {user ? (
                                 <TouchableOpacity
                                     style={styles.menuItem}
@@ -431,7 +442,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                 </Animated.View>
             </Pressable>
 
-            
+
             <Modal
                 visible={actionMenuVisible}
                 transparent
@@ -447,7 +458,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                             {selectedSession?.title}
                         </Text>
 
-                        
+
                         <TouchableOpacity
                             style={styles.actionMenuItem}
                             onPress={handleRenameSession}
@@ -514,7 +525,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                 </Pressable>
             </Modal>
 
-            
+
             <Modal
                 visible={groupPickerVisible}
                 transparent

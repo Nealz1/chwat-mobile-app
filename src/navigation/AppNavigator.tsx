@@ -9,6 +9,7 @@ import { GroupsScreen } from '../screens/GroupsScreen';
 import { HelpScreen } from '../screens/HelpScreen';
 import { ArchivesScreen } from '../screens/ArchivesScreen';
 import { SearchScreen } from '../screens/SearchScreen';
+import { CanteenFormScreen } from '../screens/CanteenFormScreen';
 import { useTheme } from '../contexts/ThemeContext';
 
 export type RootStackParamList = {
@@ -20,6 +21,7 @@ export type RootStackParamList = {
     Help: undefined;
     Archives: undefined;
     Search: undefined;
+    CanteenForm: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -89,6 +91,11 @@ export function AppNavigator() {
                         title: 'Szukaj',
                         headerShown: false,
                     }}
+                />
+                <Stack.Screen
+                    name="CanteenForm"
+                    component={CanteenFormScreen}
+                    options={{ title: 'Dodaj Menu' }}
                 />
             </Stack.Navigator>
         </NavigationContainer>
