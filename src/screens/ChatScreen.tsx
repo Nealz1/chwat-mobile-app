@@ -22,6 +22,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Audio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
 import Markdown from 'react-native-markdown-display';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { chatService, SendMessageResponse } from '../services/chatService';
@@ -93,6 +94,12 @@ export function ChatScreen({ route, navigation }: Props) {
         loadDraft();
     }, []);
 
+    useFocusEffect(
+        useCallback(() => {
+            loadUser();
+        }, [])
+    );
+
     const loadDraft = async () => {
         try {
             const draft = await AsyncStorage.getItem(STORAGE_KEYS.DRAFT_MESSAGE || 'draft_message');
@@ -117,19 +124,6 @@ export function ChatScreen({ route, navigation }: Props) {
         const timeoutId = setTimeout(saveDraft, 500);
         return () => clearTimeout(timeoutId);
     }, [inputText]);
-
-    useEffect(() => {
-        const showSub = Keyboard.addListener('keyboardDidShow', (e) => {
-            setKeyboardHeight(e.endCoordinates.height);
-        });
-        const hideSub = Keyboard.addListener('keyboardDidHide', () => {
-            setKeyboardHeight(0);
-        });
-        return () => {
-            showSub.remove();
-            hideSub.remove();
-        };
-    }, []);
 
     useEffect(() => {
         const sessionId = route.params?.sessionId;
@@ -625,7 +619,7 @@ export function ChatScreen({ route, navigation }: Props) {
                 behavior="padding"
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
             >
-                
+
                 <FlatList
                     data={messages}
                     renderItem={renderMessage}
@@ -635,7 +629,7 @@ export function ChatScreen({ route, navigation }: Props) {
                     keyboardShouldPersistTaps="handled"
                 />
 
-                
+
                 <ChatInput
                     inputText={inputText}
                     onInputChange={handleInputChange}
@@ -656,7 +650,7 @@ export function ChatScreen({ route, navigation }: Props) {
                 />
             </KeyboardAvoidingView>
 
-            
+
             <Modal
                 visible={editingIndex !== null}
                 transparent
@@ -694,7 +688,7 @@ export function ChatScreen({ route, navigation }: Props) {
                 </View>
             </Modal>
 
-            
+
             <Modal
                 visible={attachmentModalVisible}
                 transparent
@@ -749,7 +743,7 @@ export function ChatScreen({ route, navigation }: Props) {
                 </TouchableOpacity>
             </Modal>
 
-            
+
             <Modal
                 visible={explainModalVisible}
                 transparent

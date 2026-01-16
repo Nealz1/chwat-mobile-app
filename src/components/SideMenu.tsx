@@ -72,7 +72,6 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
         if (currentUser) {
             await loadSessions();
             const groupsList = await groupsService.getGroups();
-            console.log('Loaded groups:', groupsList);
             setGroups(groupsList);
         }
     };
@@ -398,7 +397,6 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                 </Text>
                             </TouchableOpacity>
 
-                            {/* Canteen Form */}
                             <TouchableOpacity
                                 style={styles.menuItem}
                                 onPress={() => navigateTo('CanteenForm')}
@@ -409,7 +407,6 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                 </Text>
                             </TouchableOpacity>
 
-                            {/* Login/Logout */}
                             {user ? (
                                 <TouchableOpacity
                                     style={styles.menuItem}

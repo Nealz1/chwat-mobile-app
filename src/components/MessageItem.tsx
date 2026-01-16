@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
     View,
     Text,
     TouchableOpacity,
     StyleSheet,
     ActivityIndicator,
+    Animated,
 } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import { Ionicons } from '@expo/vector-icons';
@@ -71,7 +72,12 @@ export function MessageItem({
             { backgroundColor: item.sender === 'user' ? (isDark ? '#3A3A3A' : '#E5E5E5') : 'transparent' }
         ]}>
             {item.isLoading ? (
-                <ActivityIndicator color={colors.text} size="small" />
+                <View style={styles.typingContainer}>
+                    <ActivityIndicator color={colors.textSecondary} size="small" />
+                    <Text style={[styles.typingText, { color: colors.textSecondary }]}>
+                        Typing...
+                    </Text>
+                </View>
             ) : (
                 <>
                     <Markdown style={{
@@ -252,5 +258,15 @@ const styles = StyleSheet.create({
         fontSize: 12,
         minWidth: 30,
         textAlign: 'center',
+    },
+    typingContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        paddingVertical: 8,
+    },
+    typingText: {
+        fontSize: 14,
+        fontStyle: 'italic',
     },
 });

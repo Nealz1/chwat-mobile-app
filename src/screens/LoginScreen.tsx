@@ -43,7 +43,15 @@ export function LoginScreen({ navigation }: Props) {
                 const user = await authService.getCurrentUser();
                 if (user) {
                     Alert.alert('✅', `${t.success} ${user.first_name}`, [
-                        { text: 'OK', onPress: () => navigation.goBack() }
+                        {
+                            text: 'OK',
+                            onPress: () => {
+                                navigation.reset({
+                                    index: 0,
+                                    routes: [{ name: 'Chat', params: { newChat: Date.now() } }],
+                                });
+                            }
+                        }
                     ]);
                 } else {
                     Alert.alert('❌', t.error);
@@ -62,7 +70,7 @@ export function LoginScreen({ navigation }: Props) {
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.content}>
-                
+
                 <View style={[styles.iconContainer, { backgroundColor: colors.primary + '15' }]}>
                     <Ionicons name="school-outline" size={48} color={colors.primary} />
                 </View>
@@ -75,7 +83,7 @@ export function LoginScreen({ navigation }: Props) {
                     {t.subtitle}
                 </Text>
 
-                
+
                 <TouchableOpacity
                     style={[styles.primaryButton, { backgroundColor: colors.primary }]}
                     onPress={handleOAuthLogin}
@@ -89,7 +97,7 @@ export function LoginScreen({ navigation }: Props) {
                     )}
                 </TouchableOpacity>
 
-                
+
                 <TouchableOpacity
                     style={styles.skipButton}
                     onPress={() => navigation.goBack()}
