@@ -70,13 +70,13 @@ export function ChatInput({
                 left: 0,
                 right: 0,
                 bottom: keyboardHeight > 0 ? keyboardHeight : 0,
-                paddingBottom: keyboardHeight > 0 ? 50 : 35,
+                paddingBottom: keyboardHeight > 0 ? 50 : 60,
             }
         ]}>
-            
+
             {attachedFile && (
                 <View style={[styles.attachedFileRow, { backgroundColor: colors.background }]}>
-                    
+
                     {attachedFile.mimeType?.startsWith('image/') ? (
                         <Image
                             source={{ uri: attachedFile.uri }}
@@ -94,7 +94,7 @@ export function ChatInput({
                 </View>
             )}
             <View style={styles.inputRow}>
-                
+
                 <TouchableOpacity
                     style={styles.inputActionButton}
                     onPress={onAttachFile}
@@ -104,7 +104,7 @@ export function ChatInput({
                 </TouchableOpacity>
 
                 <View style={styles.inputWithAutocomplete}>
-                    
+
                     {showGroupAutocomplete && groupSuggestions.length > 0 && (
                         <View style={[styles.autocompleteDropdown, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                             {groupSuggestions.map((suggestion, index) => (
@@ -132,7 +132,7 @@ export function ChatInput({
                     />
                 </View>
 
-                
+
                 <TouchableOpacity
                     style={styles.inputActionButton}
                     onPress={onVoiceRecord}
@@ -145,7 +145,7 @@ export function ChatInput({
                     />
                 </TouchableOpacity>
 
-                
+
                 {isLoading ? (
                     <TouchableOpacity
                         style={[styles.sendButton, { backgroundColor: colors.error }]}
