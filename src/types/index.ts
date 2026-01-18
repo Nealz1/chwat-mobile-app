@@ -37,6 +37,7 @@ export interface Message {
     feedback?: string | null;
     thinking_steps?: ThinkingStepsData;
     suggestions?: SuggestionsData;
+    thinkingStep?: string;
 }
 
 export interface MessageNode {

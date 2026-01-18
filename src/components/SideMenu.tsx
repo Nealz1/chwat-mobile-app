@@ -335,7 +335,7 @@ export function SideMenu({ visible, onClose, navigation }: SideMenuProps) {
                                     <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
                                         {language === 'pl' ? 'OSTATNIE 30 DNI' : 'LAST 30 DAYS'}
                                     </Text>
-                                    {recentSessions.slice(0, 10).map(session => (
+                                    {recentSessions.map(session => (
                                         <TouchableOpacity
                                             key={session.id}
                                             style={[styles.sessionItem, session.is_pinned && styles.pinnedSession]}

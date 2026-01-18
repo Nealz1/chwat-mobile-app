@@ -20,6 +20,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { chatService, SendMessageResponse } from '../services/chatService';
+import { streamChatResponse } from '../services/streamingService';
 import { authService } from '../services/authService';
 import type { Message, User } from '../types';
 import { useTheme } from '../contexts/ThemeContext';
@@ -55,6 +56,7 @@ export function ChatScreen({ route, navigation }: Props) {
     const [editText, setEditText] = useState('');
     const [explainModalVisible, setExplainModalVisible] = useState(false);
     const [explainText, setExplainText] = useState('');
+    const [thinkingStep, setThinkingStep] = useState<string>('');
     const abortControllerRef = useRef<AbortController | null>(null);
 
     const {
@@ -208,39 +210,99 @@ export function ChatScreen({ route, navigation }: Props) {
         setInputText('');
         setAttachedFile(null);
         setIsLoading(true);
+        setThinkingStep('');
 
-        setMessages(prev => [...prev, { sender: 'bot', text: '', isLoading: true }]);
+        setMessages(prev => [...prev, { sender: 'bot', text: '', isLoading: true, thinkingStep: '' }]);
+
+        abortControllerRef.current = new AbortController();
 
         try {
-            let response: SendMessageResponse | { response: string };
-
-            if (user) {
-                if (currentAttachment && currentAttachment.mimeType?.startsWith('image/')) {
-                    response = await chatService.sendMessageWithImage(
-                        messageText,
-                        currentAttachment.uri,
-                        currentAttachment.mimeType || 'image/jpeg',
-                        currentSessionId
-                    );
-                } else {
-                    response = await chatService.sendMessage(messageText, currentSessionId);
-                }
+            if (currentAttachment && currentAttachment.mimeType?.startsWith('image/')) {
+                const response = await chatService.sendMessageWithImage(
+                    messageText,
+                    currentAttachment.uri,
+                    currentAttachment.mimeType || 'image/jpeg',
+                    currentSessionId
+                );
 
                 if ('session_id' in response) {
                     setCurrentSessionId(response.session_id);
                 }
-            } else {
-                response = await chatService.sendGuestMessage(messageText);
-            }
 
-            setMessages(prev => [
-                ...prev.slice(0, -1),
-                {
-                    sender: 'bot',
-                    text: response.response,
-                    nodeId: 'node_id' in response ? response.node_id : undefined,
-                }
-            ]);
+                setMessages(prev => [
+                    ...prev.slice(0, -1),
+                    {
+                        sender: 'bot',
+                        text: response.response,
+                        nodeId: 'node_id' in response ? response.node_id : undefined,
+                    }
+                ]);
+            } else {
+                let streamedText = '';
+
+                await streamChatResponse({
+                    message: messageText,
+                    sessionId: currentSessionId,
+                    useAgents: true,
+                    abortController: abortControllerRef.current,
+                    onStart: () => {
+                        setThinkingStep(language === 'pl' ? 'Analizuję zapytanie...' : 'Analyzing query...');
+                    },
+                    onStep: (step) => {
+                        setThinkingStep(step);
+                        setMessages(prev => {
+                            const updated = [...prev];
+                            const lastIdx = updated.length - 1;
+                            if (updated[lastIdx]?.isLoading) {
+                                updated[lastIdx] = { ...updated[lastIdx], thinkingStep: step };
+                            }
+                            return updated;
+                        });
+                    },
+                    onStatus: (status) => {
+                        setThinkingStep(status);
+                        setMessages(prev => {
+                            const updated = [...prev];
+                            const lastIdx = updated.length - 1;
+                            if (updated[lastIdx]?.isLoading) {
+                                updated[lastIdx] = { ...updated[lastIdx], thinkingStep: status };
+                            }
+                            return updated;
+                        });
+                    },
+                    onToken: (token) => {
+                        streamedText += token;
+                        setMessages(prev => {
+                            const updated = [...prev];
+                            const lastIdx = updated.length - 1;
+                            if (updated[lastIdx]?.isLoading) {
+                                updated[lastIdx] = { ...updated[lastIdx], text: streamedText };
+                            }
+                            return updated;
+                        });
+                    },
+                    onDone: (fullResponse, sessionId) => {
+                        if (sessionId) {
+                            setCurrentSessionId(sessionId);
+                        }
+                        setMessages(prev => [
+                            ...prev.slice(0, -1),
+                            {
+                                sender: 'bot',
+                                text: fullResponse,
+                            }
+                        ]);
+                        setThinkingStep('');
+                    },
+                    onError: (error) => {
+                        console.error('Streaming error:', error);
+                        setMessages(prev => [
+                            ...prev.slice(0, -1),
+                            { sender: 'bot', text: t.chat.serverError }
+                        ]);
+                    },
+                });
+            }
         } catch (error) {
             console.error('Error sending message:', error);
             setMessages(prev => [
@@ -249,9 +311,10 @@ export function ChatScreen({ route, navigation }: Props) {
             ]);
         } finally {
             setIsLoading(false);
+            setThinkingStep('');
             abortControllerRef.current = null;
         }
-    }, [inputText, isLoading, user, currentSessionId, attachedFile, t]);
+    }, [inputText, isLoading, currentSessionId, attachedFile, t, language]);
 
     const handleCancel = useCallback(() => {
         if (abortControllerRef.current) {

@@ -75,7 +75,7 @@ export function MessageItem({
                 <View style={styles.typingContainer}>
                     <ActivityIndicator color={colors.textSecondary} size="small" />
                     <Text style={[styles.typingText, { color: colors.textSecondary }]}>
-                        Typing...
+                        {item.thinkingStep || 'Thinking...'}
                     </Text>
                 </View>
             ) : (
@@ -232,11 +232,12 @@ const styles = StyleSheet.create({
     messageActions: {
         flexDirection: 'row',
         flexWrap: 'wrap',
+        alignItems: 'center',
         marginTop: 12,
         paddingTop: 8,
         borderTopWidth: StyleSheet.hairlineWidth,
         borderTopColor: 'rgba(128, 128, 128, 0.2)',
-        gap: 8,
+        gap: 4,
     },
     actionButton: {
         padding: 8,
@@ -248,7 +249,8 @@ const styles = StyleSheet.create({
     versionNavigator: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginLeft: 12,
+        marginLeft: 'auto',
+        paddingLeft: 8,
         gap: 2,
     },
     versionButton: {

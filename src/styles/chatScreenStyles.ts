@@ -14,7 +14,7 @@ export const chatScreenStyles = StyleSheet.create({
     },
     messagesList: {
         padding: 16,
-        paddingBottom: 8,
+        paddingBottom: 140,
     },
     welcomeMessageContainer: {
         alignItems: 'center',

@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL, STORAGE_KEYS } from '../config/constants';
 
 export interface StreamEvent {
-    type: 'start' | 'token' | 'done' | 'error' | 'status';
+    type: 'start' | 'token' | 'done' | 'error' | 'status' | 'step';
     content?: string;
     message?: string;
     full_response?: string;
@@ -22,6 +22,7 @@ export interface StreamOptions {
     onDone?: (fullResponse: string, sessionId?: number) => void;
     onError?: (error: string) => void;
     onStatus?: (status: string) => void;
+    onStep?: (step: string) => void;
     onFileDownload?: (filename: string, path: string) => void;
     abortController?: AbortController;
     useAgents?: boolean;
@@ -36,6 +37,7 @@ export async function streamChatResponse(options: StreamOptions): Promise<void> 
         onDone,
         onError,
         onStatus,
+        onStep,
         onFileDownload,
         abortController,
         useAgents = false,
@@ -43,7 +45,7 @@ export async function streamChatResponse(options: StreamOptions): Promise<void> 
 
     const token = await AsyncStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
 
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
         'Content-Type': 'application/json',
     };
 
@@ -115,6 +117,9 @@ export async function streamChatResponse(options: StreamOptions): Promise<void> 
                             case 'status':
                                 onStatus?.(eventData.message || '');
                                 break;
+                            case 'step':
+                                onStep?.((eventData as unknown as { step: string }).step || '');
+                                break;
                         }
                     } catch (parseError) {
                         console.warn('Failed to parse SSE event:', line, parseError);
@@ -143,7 +148,7 @@ export async function sendChatMessageFallback(
 ): Promise<{ response: string; sessionId?: number }> {
     const token = await AsyncStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
 
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
         'Content-Type': 'application/json',
     };
 
