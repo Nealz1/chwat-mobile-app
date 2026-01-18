@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'http://10.70.147.127:8000';
+export const API_BASE_URL = 'http://192.168.50.137:8000';
 
 export const STORAGE_KEYS = {
     DARK_MODE: 'darkMode',

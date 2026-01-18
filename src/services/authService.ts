@@ -35,8 +35,6 @@ class AuthService {
     }
 
     async loginWithOAuth(): Promise<string | null> {
-        await this.clearCasSession();
-
         const redirectUrl = Linking.createURL('auth');
 
         const response = await fetch(

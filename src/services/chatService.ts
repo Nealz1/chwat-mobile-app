@@ -51,17 +51,18 @@ class ChatService {
 
     async sendMessage(message: string, sessionId?: number): Promise<SendMessageResponse> {
         const headers = await authService.getAuthHeaders();
+        delete headers['Content-Type'];
+
+        const formData = new FormData();
+        formData.append('message', message);
+        if (sessionId) {
+            formData.append('session_id', String(sessionId));
+        }
 
         const response = await fetch(`${API_BASE_URL}/chat`, {
             method: 'POST',
-            headers: {
-                ...headers,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                message,
-                session_id: sessionId,
-            }),
+            headers,
+            body: formData,
         });
 
         if (!response.ok) {
