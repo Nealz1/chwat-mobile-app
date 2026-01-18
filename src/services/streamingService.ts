@@ -70,60 +70,42 @@ export async function streamChatResponse(options: StreamOptions): Promise<void> 
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        if (!response.body) {
-            throw new Error('Response body is null');
-        }
+        onStart?.();
 
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
+        const text = await response.text();
+        const lines = text.split('\n');
 
-        let buffer = '';
+        for (const line of lines) {
+            if (line.startsWith('data: ')) {
+                try {
+                    const eventData: StreamEvent = JSON.parse(line.slice(6));
 
-        while (true) {
-            const { done, value } = await reader.read();
-
-            if (done) {
-                break;
-            }
-
-            buffer += decoder.decode(value, { stream: true });
-
-            const lines = buffer.split('\n');
-            buffer = lines.pop() || '';
-
-            for (const line of lines) {
-                if (line.startsWith('data: ')) {
-                    try {
-                        const eventData: StreamEvent = JSON.parse(line.slice(6));
-
-                        switch (eventData.type) {
-                            case 'start':
-                                onStart?.();
-                                break;
-                            case 'token':
-                                if (eventData.content) {
-                                    onToken?.(eventData.content);
-                                }
-                                break;
-                            case 'done':
-                                onDone?.(eventData.full_response || '', eventData.session_id);
-                                if (eventData.file_download && onFileDownload) {
-                                    onFileDownload(eventData.file_download.filename, eventData.file_download.path);
-                                }
-                                break;
-                            case 'error':
-                                onError?.(eventData.message || 'Unknown error');
-                                break;
-                            case 'status':
-                                onStatus?.(eventData.message || '');
-                                break;
-                            case 'step':
-                                onStep?.((eventData as unknown as { step: string }).step || '');
-                                break;
-                        }
-                    } catch (parseError) {
-                        console.warn('Failed to parse SSE event:', line, parseError);
+                    switch (eventData.type) {
+                        case 'start':
+                            break;
+                        case 'token':
+                            if (eventData.content) {
+                                onToken?.(eventData.content);
+                            }
+                            break;
+                        case 'done':
+                            onDone?.(eventData.full_response || '', eventData.session_id);
+                            if (eventData.file_download && onFileDownload) {
+                                onFileDownload(eventData.file_download.filename, eventData.file_download.path);
+                            }
+                            break;
+                        case 'error':
+                            onError?.(eventData.message || 'Unknown error');
+                            break;
+                        case 'status':
+                            onStatus?.(eventData.message || '');
+                            break;
+                        case 'step':
+                            onStep?.((eventData as unknown as { step: string }).step || '');
+                            break;
                     }
+                } catch (parseError) {
+                    console.warn('Failed to parse SSE event:', line, parseError);
                 }
             }
         }
@@ -134,7 +116,6 @@ export async function streamChatResponse(options: StreamOptions): Promise<void> 
 
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         onError?.(errorMessage);
-        throw error;
     }
 }
 

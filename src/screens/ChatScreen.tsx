@@ -16,6 +16,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -29,7 +31,7 @@ import { BackgroundLogo } from '../components/BackgroundLogo';
 import { SideMenu } from '../components/SideMenu';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { STORAGE_KEYS } from '../config/constants';
+import { STORAGE_KEYS, API_BASE_URL } from '../config/constants';
 import { useGroupAutocomplete } from '../hooks/useGroupAutocomplete';
 import { useMediaHandlers } from '../hooks/useMediaHandlers';
 import { MessageItem } from '../components/MessageItem';
@@ -295,16 +297,53 @@ export function ChatScreen({ route, navigation }: Props) {
                         setThinkingStep('');
                     },
                     onError: (error) => {
-                        console.error('Streaming error:', error);
+                        console.error('Streaming onError called:', error);
                         setMessages(prev => [
                             ...prev.slice(0, -1),
                             { sender: 'bot', text: t.chat.serverError }
                         ]);
                     },
+                    onFileDownload: async (filename, _path) => {
+                        try {
+                            const downloadUrl = `${API_BASE_URL}/download/form/${encodeURIComponent(filename)}`;
+                            const token = await AsyncStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+                            const localUri = `${FileSystem.cacheDirectory}${filename}`;
+
+                            console.log('Downloading file:', downloadUrl, 'to:', localUri);
+
+                            const downloadResult = await FileSystem.downloadAsync(
+                                downloadUrl,
+                                localUri,
+                                {
+                                    headers: token ? { Authorization: `Bearer ${token}` } : {},
+                                }
+                            );
+
+                            console.log('Download result:', downloadResult.status, downloadResult.uri);
+
+                            if (downloadResult.status === 200) {
+                                await Sharing.shareAsync(downloadResult.uri, {
+                                    mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                                    dialogTitle: filename,
+                                });
+                            } else {
+                                Alert.alert(
+                                    language === 'pl' ? 'Błąd pobierania' : 'Download Error',
+                                    `Status: ${downloadResult.status}`
+                                );
+                            }
+                        } catch (err) {
+                            console.error('File download error:', err);
+                            Alert.alert(
+                                language === 'pl' ? 'Błąd' : 'Error',
+                                String(err)
+                            );
+                        }
+                    },
                 });
             }
         } catch (error) {
-            console.error('Error sending message:', error);
+            console.error('OUTER CATCH - Error sending message:', error);
             setMessages(prev => [
                 ...prev.slice(0, -1),
                 { sender: 'bot', text: t.chat.serverError }
