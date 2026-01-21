@@ -6,10 +6,29 @@ import {
     StyleSheet,
     Linking,
 } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
 import type { Message, User } from '../types';
 import { ThinkingSteps } from './ThinkingSteps';
 import { Suggestions } from './Suggestions';
+
+// Check if URL should open in-app browser
+function isInAppUrl(url: string): boolean {
+    return url.includes('usos.wat.edu.pl') || url.includes('usosapps.wat.edu.pl');
+}
+
+// Open URL - in-app for USOS, external for others
+async function openUrl(url: string): Promise<void> {
+    if (isInAppUrl(url)) {
+        await WebBrowser.openBrowserAsync(url, {
+            dismissButtonStyle: 'close',
+            showTitle: true,
+            enableBarCollapsing: true,
+        });
+    } else {
+        await Linking.openURL(url);
+    }
+}
 
 // Simple markdown renderer that works with React Native Text
 function renderMarkdownText(text: string, textColor: string, primaryColor: string): React.ReactNode[] {
@@ -55,7 +74,7 @@ function parseInlineMarkdown(text: string, textColor: string, primaryColor: stri
                 <Text
                     key={`${lineKey}-link-${partIndex++}`}
                     style={{ color: primaryColor, textDecorationLine: 'underline' }}
-                    onPress={() => Linking.openURL(url)}
+                    onPress={() => openUrl(url)}
                 >
                     {linkText}
                 </Text>
