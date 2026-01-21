@@ -388,6 +388,10 @@ export function ChatScreen({ route, navigation }: Props) {
                         });
                     },
                     onDone: (fullResponse, sessionId) => {
+                        console.log(`[onDone] fullResponse length: ${fullResponse?.length || 0}`);
+                        console.log(`[onDone] fullResponse preview: ${fullResponse?.substring(0, 200)}...`);
+                        console.log(`[onDone] fullResponse end: ...${fullResponse?.substring(fullResponse.length - 200)}`);
+
                         const now = Date.now();
                         if (steps.length > 0) {
                             steps[steps.length - 1].duration_ms = now - stepStartTime;
@@ -688,24 +692,26 @@ export function ChatScreen({ route, navigation }: Props) {
         }
     }, [messages, language]);
 
-    const renderMessage = useCallback(({ item, index }: { item: Message; index: number }) => (
-        <MessageItem
-            item={item}
-            index={index}
-            messagesLength={messages.length}
-            colors={colors}
-            isDark={isDark}
-            isLoading={isLoading}
-            user={user}
-            onCopy={handleCopyMessage}
-            onEdit={handleStartEdit}
-            onRegenerate={handleRegenerateResponse}
-            onSpeak={handleSpeak}
-            onExplain={handleExplain}
-            onFeedback={handleFeedback}
-            onNavigateVersion={handleNavigateVersion}
-        />
-    ), [colors, isDark, handleCopyMessage, handleRegenerateResponse, handleStartEdit, handleFeedback, handleSpeak, handleNavigateVersion, handleExplain, isLoading, user, messages]);
+    const renderMessage = useCallback(({ item, index }: { item: Message; index: number }) => {
+        return (
+            <MessageItem
+                item={item}
+                index={index}
+                messagesLength={messages.length}
+                colors={colors}
+                isDark={isDark}
+                isLoading={isLoading}
+                user={user}
+                onCopy={handleCopyMessage}
+                onEdit={handleStartEdit}
+                onRegenerate={handleRegenerateResponse}
+                onSpeak={handleSpeak}
+                onExplain={handleExplain}
+                onFeedback={handleFeedback}
+                onNavigateVersion={handleNavigateVersion}
+            />
+        );
+    }, [colors, isDark, handleCopyMessage, handleRegenerateResponse, handleStartEdit, handleFeedback, handleSpeak, handleNavigateVersion, handleExplain, isLoading, user, messages]);
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
@@ -725,9 +731,13 @@ export function ChatScreen({ route, navigation }: Props) {
                     data={messages}
                     renderItem={renderMessage}
                     keyExtractor={(_, index) => index.toString()}
-                    contentContainerStyle={[styles.messagesList, { paddingBottom: 80 + keyboardHeight }]}
+                    style={{ flex: 1 }}
+                    contentContainerStyle={[styles.messagesList, { paddingBottom: 100 + keyboardHeight, flexGrow: 1 }]}
                     inverted={false}
                     keyboardShouldPersistTaps="handled"
+                    removeClippedSubviews={false}
+                    scrollEnabled={true}
+                    nestedScrollEnabled={true}
                 />
 
 

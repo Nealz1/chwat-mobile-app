@@ -1,4 +1,3 @@
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL, STORAGE_KEYS } from '../config/constants';
 
@@ -50,6 +49,8 @@ export async function streamChatResponse(options: StreamOptions): Promise<void> 
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         let lastReadIndex = 0;
+        let buffer = '';
+        let fullResponseAccumulator = '';
 
         xhr.open('POST', url, true);
         xhr.setRequestHeader('Content-Type', 'application/json');
@@ -57,55 +58,74 @@ export async function streamChatResponse(options: StreamOptions): Promise<void> 
             xhr.setRequestHeader('Authorization', `Bearer ${token}`);
         }
 
-        xhr.onreadystatechange = () => {
-            if (xhr.readyState === 2) {
-                if (xhr.status >= 200 && xhr.status < 300) {
+        const processEvent = (eventData: StreamEvent) => {
+            switch (eventData.type) {
+                case 'start':
                     onStart?.();
-                }
-            } else if (xhr.readyState === 3) {
-                const response = xhr.responseText;
-                const newContent = response.substring(lastReadIndex);
-                lastReadIndex = response.length;
+                    break;
+                case 'token':
+                    if (eventData.content) {
+                        fullResponseAccumulator += eventData.content;
+                        onToken?.(eventData.content);
+                    }
+                    break;
+                case 'done':
+                    const serverResponse = eventData.full_response || '';
+                    const finalResponse = serverResponse.length >= fullResponseAccumulator.length
+                        ? serverResponse
+                        : fullResponseAccumulator;
+                    onDone?.(finalResponse, eventData.session_id);
+                    if (eventData.file_download && onFileDownload) {
+                        onFileDownload(eventData.file_download.filename, eventData.file_download.path);
+                    }
+                    break;
+                case 'error':
+                    onError?.(eventData.message || 'Unknown error');
+                    break;
+                case 'status':
+                    onStatus?.(eventData.message || '');
+                    break;
+                case 'step':
+                    onStep?.((eventData as unknown as { step: string }).step || '');
+                    break;
+            }
+        };
 
-                const lines = newContent.split('\n');
+        const processSSEData = (text: string) => {
+            buffer += text;
+            const events = buffer.split('\n\n');
+            buffer = events.pop() || '';
+
+            for (const event of events) {
+                const trimmedEvent = event.trim();
+                if (!trimmedEvent) continue;
+
+                const lines = trimmedEvent.split('\n');
                 for (const line of lines) {
-                    if (line.trim().startsWith('data: ')) {
+                    if (line.startsWith('data: ')) {
                         try {
-                            const jsonStr = line.trim().slice(6);
+                            const jsonStr = line.slice(6);
                             if (!jsonStr) continue;
-
                             const eventData: StreamEvent = JSON.parse(jsonStr);
-
-                            switch (eventData.type) {
-                                case 'start':
-                                    break;
-                                case 'token':
-                                    if (eventData.content) {
-                                        onToken?.(eventData.content);
-                                    }
-                                    break;
-                                case 'done':
-                                    onDone?.(eventData.full_response || '', eventData.session_id);
-                                    if (eventData.file_download && onFileDownload) {
-                                        onFileDownload(eventData.file_download.filename, eventData.file_download.path);
-                                    }
-                                    break;
-                                case 'error':
-                                    onError?.(eventData.message || 'Unknown error');
-                                    break;
-                                case 'status':
-                                    onStatus?.(eventData.message || '');
-                                    break;
-                                case 'step':
-                                    onStep?.((eventData as unknown as { step: string }).step || '');
-                                    break;
-                            }
+                            processEvent(eventData);
                         } catch (parseError) {
-                            // Valid partial chunks can verify here if needed
+                            // Partial JSON - will be completed in next chunk
                         }
                     }
                 }
+            }
+        };
+
+        xhr.onreadystatechange = () => {
+            if (xhr.readyState === 3) {
+                const response = xhr.responseText;
+                const newContent = response.substring(lastReadIndex);
+                lastReadIndex = response.length;
+                processSSEData(newContent);
             } else if (xhr.readyState === 4) {
+                if (buffer.trim()) {
+                    processSSEData('\n\n');
+                }
                 if (xhr.status >= 200 && xhr.status < 300) {
                     resolve();
                 } else {

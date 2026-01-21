@@ -1,13 +1,10 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import {
     View,
     Text,
     TouchableOpacity,
     StyleSheet,
-    ActivityIndicator,
-    Animated,
 } from 'react-native';
-import Markdown from 'react-native-markdown-display';
 import { Ionicons } from '@expo/vector-icons';
 import type { Message, User } from '../types';
 import { ThinkingSteps } from './ThinkingSteps';
@@ -85,35 +82,13 @@ export function MessageItem({
 
             {/* Content Section - Strict Vertical Stacking */}
             {item.text ? (
-                <View style={{ marginBottom: 8, minHeight: 24 }}>
-                    <Markdown
-                        style={{
-                            body: {
-                                color: colors.text,
-                                fontSize: 16,
-                                lineHeight: 24,
-                            },
-                            paragraph: {
-                                marginBottom: 12, // Ensure paragraph spacing
-                            },
-                            list_item: {
-                                marginVertical: 4,
-                            },
-                            code_inline: {
-                                backgroundColor: isDark ? '#2D2D2D' : '#F0F0F0',
-                                borderRadius: 4,
-                                paddingHorizontal: 4,
-                            },
-                            code_block: {
-                                backgroundColor: isDark ? '#1E1E1E' : '#F5F5F5',
-                                borderRadius: 8,
-                                padding: 12,
-                                marginVertical: 8,
-                            },
-                        }}
+                <View style={{ marginBottom: 4, width: '100%', flexShrink: 1 }}>
+                    <Text
+                        style={{ color: colors.text, fontSize: 16, lineHeight: 24 }}
+                        selectable={true}
                     >
                         {item.text}
-                    </Markdown>
+                    </Text>
                 </View>
             ) : null}
 
@@ -178,13 +153,21 @@ export function MessageItem({
                                         style={styles.actionButton}
                                         onPress={() => onFeedback(item.nodeId!, 'positive')}
                                     >
-                                        <Ionicons name="thumbs-up-outline" size={16} color={item.feedback === 'positive' ? colors.primary : colors.textSecondary} />
+                                        <Ionicons
+                                            name="thumbs-up-outline"
+                                            size={16}
+                                            color={item.feedback === 'positive' ? colors.primary : colors.textSecondary}
+                                        />
                                     </TouchableOpacity>
                                     <TouchableOpacity
                                         style={styles.actionButton}
                                         onPress={() => onFeedback(item.nodeId!, 'negative')}
                                     >
-                                        <Ionicons name="thumbs-down-outline" size={16} color={item.feedback === 'negative' ? '#FF4444' : colors.textSecondary} />
+                                        <Ionicons
+                                            name="thumbs-down-outline"
+                                            size={16}
+                                            color={item.feedback === 'negative' ? '#FF4444' : colors.textSecondary}
+                                        />
                                     </TouchableOpacity>
                                 </>
                             )}
@@ -243,30 +226,29 @@ const styles = StyleSheet.create({
     messageContainer: {
         marginHorizontal: 16,
         marginVertical: 4,
-        padding: 12,
-        borderRadius: 16,
-        maxWidth: '85%',
+        padding: 14,
+        paddingBottom: 16,
+        borderRadius: 20,
+        maxWidth: '90%',
+        minHeight: 'auto',
     },
     userMessage: {
         alignSelf: 'flex-end',
+        borderBottomRightRadius: 4,
     },
     botMessage: {
         alignSelf: 'flex-start',
+        borderBottomLeftRadius: 4,
     },
     messageActions: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         alignItems: 'center',
-        marginTop: 12,
-        paddingTop: 8,
-        borderTopWidth: StyleSheet.hairlineWidth,
-        borderTopColor: 'rgba(128, 128, 128, 0.2)',
+        marginTop: 8,
         gap: 4,
     },
     actionButton: {
         padding: 8,
-        minWidth: 32,
-        minHeight: 32,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -274,7 +256,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         marginLeft: 'auto',
-        paddingLeft: 8,
         gap: 2,
     },
     versionButton: {
@@ -282,7 +263,7 @@ const styles = StyleSheet.create({
     },
     versionText: {
         fontSize: 12,
-        minWidth: 30,
+        minWidth: 24,
         textAlign: 'center',
     },
     typingContainer: {
