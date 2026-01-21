@@ -71,132 +71,156 @@ export function MessageItem({
             item.sender === 'user' ? styles.userMessage : styles.botMessage,
             { backgroundColor: item.sender === 'user' ? (isDark ? '#3A3A3A' : '#E5E5E5') : 'transparent' }
         ]}>
-            {item.isLoading ? (
-                <View style={styles.typingContainer}>
-                    <ActivityIndicator color={colors.textSecondary} size="small" />
-                    <Text style={[styles.typingText, { color: colors.textSecondary }]}>
-                        {item.thinkingStep || 'Thinking...'}
-                    </Text>
-                </View>
-            ) : (
-                <>
-                    <Markdown style={{
-                        body: {
-                            color: colors.text,
-                            fontSize: 16,
-                        },
-                        code_inline: {
-                            backgroundColor: isDark ? '#2D2D2D' : '#F0F0F0',
-                            borderRadius: 4,
-                            paddingHorizontal: 4,
-                        },
-                        code_block: {
-                            backgroundColor: isDark ? '#1E1E1E' : '#F5F5F5',
-                            borderRadius: 8,
-                            padding: 12,
-                        },
-                    }}>
+            {item.sender === 'bot' && (
+                <ThinkingSteps
+                    data={item.thinking_steps}
+                    isLoading={item.isLoading}
+                    currentStep={item.thinkingStep}
+                    colors={colors}
+                    isDark={isDark}
+                />
+            )}
+
+
+
+            {/* Content Section - Strict Vertical Stacking */}
+            {item.text ? (
+                <View style={{ marginBottom: 8, minHeight: 24 }}>
+                    <Markdown
+                        style={{
+                            body: {
+                                color: colors.text,
+                                fontSize: 16,
+                                lineHeight: 24,
+                            },
+                            paragraph: {
+                                marginBottom: 12, // Ensure paragraph spacing
+                            },
+                            list_item: {
+                                marginVertical: 4,
+                            },
+                            code_inline: {
+                                backgroundColor: isDark ? '#2D2D2D' : '#F0F0F0',
+                                borderRadius: 4,
+                                paddingHorizontal: 4,
+                            },
+                            code_block: {
+                                backgroundColor: isDark ? '#1E1E1E' : '#F5F5F5',
+                                borderRadius: 8,
+                                padding: 12,
+                                marginVertical: 8,
+                            },
+                        }}
+                    >
                         {item.text}
                     </Markdown>
+                </View>
+            ) : null}
 
-                    {item.sender === 'bot' && item.thinking_steps && (
-                        <ThinkingSteps data={item.thinking_steps} />
-                    )}
-                    {item.sender === 'bot' && item.suggestions && onSuggestionPress && (
-                        <Suggestions
-                            data={item.suggestions}
-                            onSuggestionPress={onSuggestionPress}
-                        />
-                    )}
-                    <View style={styles.messageActions}>
+            {item.sender === 'bot' && item.suggestions && onSuggestionPress && (
+                <Suggestions
+                    data={item.suggestions}
+                    onSuggestionPress={onSuggestionPress}
+                />
+            )}
+
+            {/* Actions Footer - Only visible when accessible */}
+            {!item.isLoading && (
+                <View style={styles.messageActions}>
+                    <TouchableOpacity
+                        style={styles.actionButton}
+                        onPress={() => onCopy(item.text)}
+                    >
+                        <Ionicons name="copy-outline" size={16} color={colors.textSecondary} />
+                    </TouchableOpacity>
+
+                    {item.sender === 'user' && (
                         <TouchableOpacity
                             style={styles.actionButton}
-                            onPress={() => onCopy(item.text)}
+                            onPress={() => onEdit(index, item.text)}
+                            disabled={isLoading}
                         >
-                            <Ionicons name="copy-outline" size={16} color={colors.textSecondary} />
+                            <Ionicons name="pencil-outline" size={16} color={colors.textSecondary} />
                         </TouchableOpacity>
-                        {item.sender === 'user' && (
-                            <TouchableOpacity
-                                style={styles.actionButton}
-                                onPress={() => onEdit(index, item.text)}
-                                disabled={isLoading}
-                            >
-                                <Ionicons name="pencil-outline" size={16} color={colors.textSecondary} />
-                            </TouchableOpacity>
-                        )}
-                        {item.sender === 'bot' && index > 0 && (
-                            <TouchableOpacity
-                                style={styles.actionButton}
-                                onPress={() => onRegenerate(index)}
-                                disabled={isLoading}
-                            >
-                                <Ionicons name="refresh-outline" size={16} color={colors.textSecondary} />
-                            </TouchableOpacity>
-                        )}
-                        {item.sender === 'bot' && (
+                    )}
+
+                    {item.sender === 'bot' && (
+                        <>
+                            {index > 0 && (
+                                <TouchableOpacity
+                                    style={styles.actionButton}
+                                    onPress={() => onRegenerate(index)}
+                                    disabled={isLoading}
+                                >
+                                    <Ionicons name="refresh-outline" size={16} color={colors.textSecondary} />
+                                </TouchableOpacity>
+                            )}
+
                             <TouchableOpacity
                                 style={styles.actionButton}
                                 onPress={() => onSpeak(item.text)}
                             >
                                 <Ionicons name="volume-high-outline" size={16} color={colors.textSecondary} />
                             </TouchableOpacity>
-                        )}
-                        {item.sender === 'bot' && index > 0 && (
-                            <TouchableOpacity
-                                style={styles.actionButton}
-                                onPress={() => onExplain(index)}
-                            >
-                                <Ionicons name="help-circle-outline" size={16} color={colors.textSecondary} />
-                            </TouchableOpacity>
-                        )}
-                        {item.sender === 'bot' && item.nodeId && user && (
-                            <>
-                                <TouchableOpacity
-                                    style={styles.actionButton}
-                                    onPress={() => onFeedback(item.nodeId!, 'positive')}
-                                >
-                                    <Ionicons name="thumbs-up-outline" size={16} color={item.feedback === 'positive' ? colors.primary : colors.textSecondary} />
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={styles.actionButton}
-                                    onPress={() => onFeedback(item.nodeId!, 'negative')}
-                                >
-                                    <Ionicons name="thumbs-down-outline" size={16} color={item.feedback === 'negative' ? '#FF4444' : colors.textSecondary} />
-                                </TouchableOpacity>
-                            </>
-                        )}
 
-                        {item.siblingCount && item.siblingCount > 1 && (
-                            <View style={styles.versionNavigator}>
+                            {index > 0 && (
                                 <TouchableOpacity
-                                    style={styles.versionButton}
-                                    onPress={() => onNavigateVersion(index, 'prev')}
-                                    disabled={(item.currentIndex ?? 1) <= 1}
+                                    style={styles.actionButton}
+                                    onPress={() => onExplain(index)}
                                 >
-                                    <Ionicons
-                                        name="chevron-back"
-                                        size={14}
-                                        color={(item.currentIndex ?? 1) <= 1 ? colors.border : colors.textSecondary}
-                                    />
+                                    <Ionicons name="help-circle-outline" size={16} color={colors.textSecondary} />
                                 </TouchableOpacity>
-                                <Text style={[styles.versionText, { color: colors.textSecondary }]}>
-                                    {item.currentIndex ?? 1}/{item.siblingCount}
-                                </Text>
-                                <TouchableOpacity
-                                    style={styles.versionButton}
-                                    onPress={() => onNavigateVersion(index, 'next')}
-                                    disabled={(item.currentIndex ?? 1) >= (item.siblingCount ?? 1)}
-                                >
-                                    <Ionicons
-                                        name="chevron-forward"
-                                        size={14}
-                                        color={(item.currentIndex ?? 1) >= (item.siblingCount ?? 1) ? colors.border : colors.textSecondary}
-                                    />
-                                </TouchableOpacity>
-                            </View>
-                        )}
-                    </View>
-                </>
+                            )}
+
+                            {item.nodeId && user && (
+                                <>
+                                    <TouchableOpacity
+                                        style={styles.actionButton}
+                                        onPress={() => onFeedback(item.nodeId!, 'positive')}
+                                    >
+                                        <Ionicons name="thumbs-up-outline" size={16} color={item.feedback === 'positive' ? colors.primary : colors.textSecondary} />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={styles.actionButton}
+                                        onPress={() => onFeedback(item.nodeId!, 'negative')}
+                                    >
+                                        <Ionicons name="thumbs-down-outline" size={16} color={item.feedback === 'negative' ? '#FF4444' : colors.textSecondary} />
+                                    </TouchableOpacity>
+                                </>
+                            )}
+                        </>
+                    )}
+
+                    {item.siblingCount && item.siblingCount > 1 && (
+                        <View style={styles.versionNavigator}>
+                            <TouchableOpacity
+                                style={styles.versionButton}
+                                onPress={() => onNavigateVersion(index, 'prev')}
+                                disabled={(item.currentIndex ?? 1) <= 1}
+                            >
+                                <Ionicons
+                                    name="chevron-back"
+                                    size={14}
+                                    color={(item.currentIndex ?? 1) <= 1 ? colors.border : colors.textSecondary}
+                                />
+                            </TouchableOpacity>
+                            <Text style={[styles.versionText, { color: colors.textSecondary }]}>
+                                {item.currentIndex ?? 1}/{item.siblingCount}
+                            </Text>
+                            <TouchableOpacity
+                                style={styles.versionButton}
+                                onPress={() => onNavigateVersion(index, 'next')}
+                                disabled={(item.currentIndex ?? 1) >= (item.siblingCount ?? 1)}
+                            >
+                                <Ionicons
+                                    name="chevron-forward"
+                                    size={14}
+                                    color={(item.currentIndex ?? 1) >= (item.siblingCount ?? 1) ? colors.border : colors.textSecondary}
+                                />
+                            </TouchableOpacity>
+                        </View>
+                    )}
+                </View>
             )}
         </View>
     );

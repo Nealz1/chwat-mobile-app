@@ -44,79 +44,99 @@ export async function streamChatResponse(options: StreamOptions): Promise<void> 
     } = options;
 
     const token = await AsyncStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
-
-    const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-    };
-
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-    }
-
     const endpoint = useAgents ? '/chat/stream/agents' : '/chat/stream';
+    const url = `${API_BASE_URL}${endpoint}`;
 
-    try {
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-                message,
-                session_id: typeof sessionId === 'number' ? sessionId : null,
-            }),
-            signal: abortController?.signal,
-        });
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        let lastReadIndex = 0;
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        xhr.open('POST', url, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        if (token) {
+            xhr.setRequestHeader('Authorization', `Bearer ${token}`);
         }
 
-        onStart?.();
+        xhr.onreadystatechange = () => {
+            if (xhr.readyState === 2) {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    onStart?.();
+                }
+            } else if (xhr.readyState === 3) {
+                const response = xhr.responseText;
+                const newContent = response.substring(lastReadIndex);
+                lastReadIndex = response.length;
 
-        const text = await response.text();
-        const lines = text.split('\n');
+                const lines = newContent.split('\n');
+                for (const line of lines) {
+                    if (line.trim().startsWith('data: ')) {
+                        try {
+                            const jsonStr = line.trim().slice(6);
+                            if (!jsonStr) continue;
 
-        for (const line of lines) {
-            if (line.startsWith('data: ')) {
-                try {
-                    const eventData: StreamEvent = JSON.parse(line.slice(6));
+                            const eventData: StreamEvent = JSON.parse(jsonStr);
 
-                    switch (eventData.type) {
-                        case 'start':
-                            break;
-                        case 'token':
-                            if (eventData.content) {
-                                onToken?.(eventData.content);
+                            switch (eventData.type) {
+                                case 'start':
+                                    break;
+                                case 'token':
+                                    if (eventData.content) {
+                                        onToken?.(eventData.content);
+                                    }
+                                    break;
+                                case 'done':
+                                    onDone?.(eventData.full_response || '', eventData.session_id);
+                                    if (eventData.file_download && onFileDownload) {
+                                        onFileDownload(eventData.file_download.filename, eventData.file_download.path);
+                                    }
+                                    break;
+                                case 'error':
+                                    onError?.(eventData.message || 'Unknown error');
+                                    break;
+                                case 'status':
+                                    onStatus?.(eventData.message || '');
+                                    break;
+                                case 'step':
+                                    onStep?.((eventData as unknown as { step: string }).step || '');
+                                    break;
                             }
-                            break;
-                        case 'done':
-                            onDone?.(eventData.full_response || '', eventData.session_id);
-                            if (eventData.file_download && onFileDownload) {
-                                onFileDownload(eventData.file_download.filename, eventData.file_download.path);
-                            }
-                            break;
-                        case 'error':
-                            onError?.(eventData.message || 'Unknown error');
-                            break;
-                        case 'status':
-                            onStatus?.(eventData.message || '');
-                            break;
-                        case 'step':
-                            onStep?.((eventData as unknown as { step: string }).step || '');
-                            break;
+                        } catch (parseError) {
+                            // Valid partial chunks can verify here if needed
+                        }
                     }
-                } catch (parseError) {
-                    console.warn('Failed to parse SSE event:', line, parseError);
+                }
+            } else if (xhr.readyState === 4) {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    resolve();
+                } else {
+                    try {
+                        const errorData = JSON.parse(xhr.responseText);
+                        onError?.(errorData.detail || errorData.message || `HTTP error ${xhr.status}`);
+                    } catch {
+                        onError?.(`HTTP error ${xhr.status}`);
+                    }
+                    resolve();
                 }
             }
-        }
-    } catch (error) {
-        if (error instanceof Error && error.name === 'AbortError') {
-            return;
+        };
+
+        xhr.onerror = () => {
+            onError?.('Network request failed');
+            resolve();
+        };
+
+        if (abortController?.signal) {
+            abortController.signal.onabort = () => {
+                xhr.abort();
+                resolve();
+            };
         }
 
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        onError?.(errorMessage);
-    }
+        xhr.send(JSON.stringify({
+            message,
+            session_id: typeof sessionId === 'number' ? sessionId : null,
+        }));
+    });
 }
 
 export function isStreamingSupported(): boolean {

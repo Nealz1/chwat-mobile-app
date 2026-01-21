@@ -16,7 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
-import * as FileSystem from 'expo-file-system/legacy';
+import { downloadAsync, cacheDirectory } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
@@ -24,7 +24,7 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 import { chatService, SendMessageResponse } from '../services/chatService';
 import { streamChatResponse } from '../services/streamingService';
 import { authService } from '../services/authService';
-import type { Message, User } from '../types';
+import type { Message, User, ThinkingStep } from '../types';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { BackgroundLogo } from '../components/BackgroundLogo';
@@ -214,7 +214,13 @@ export function ChatScreen({ route, navigation }: Props) {
         setIsLoading(true);
         setThinkingStep('');
 
-        setMessages(prev => [...prev, { sender: 'bot', text: '', isLoading: true, thinkingStep: '' }]);
+        setMessages(prev => [...prev, {
+            sender: 'bot',
+            text: '',
+            isLoading: true,
+            thinkingStep: '',
+            thinking_steps: { type: 'thinking_steps', steps: [], total_duration_ms: 0 }
+        }]);
 
         abortControllerRef.current = new AbortController();
 
@@ -237,10 +243,59 @@ export function ChatScreen({ route, navigation }: Props) {
                         sender: 'bot',
                         text: response.response,
                         nodeId: 'node_id' in response ? response.node_id : undefined,
+                        thinking_steps: {
+                            type: 'thinking_steps',
+                            steps: [{
+                                type: 'step',
+                                title: 'Analiza obrazu...',
+                                detail: '',
+                                duration_ms: 1000,
+                                agent: null,
+                                status: 'completed'
+                            }],
+                            total_duration_ms: 1000
+                        }
                     }
                 ]);
             } else {
                 let streamedText = '';
+                let steps: ThinkingStep[] = [];
+                let stepStartTime = Date.now();
+                let processStartTime = Date.now();
+
+                const updateSteps = (currentSteps: ThinkingStep[], newTitle: string) => {
+                    const now = Date.now();
+                    // Close the previous step
+                    if (currentSteps.length > 0) {
+                        const lastStep = currentSteps[currentSteps.length - 1];
+
+                        // Prevent exact duplicates
+                        if (lastStep.title.trim().toLowerCase() === newTitle.trim().toLowerCase()) {
+                            return currentSteps;
+                        }
+
+                        // Also prevent duplicating the localized initial step
+                        const localizedInitial = language === 'pl' ? 'Analizuję zapytanie...' : 'Analyzing query...';
+                        if (lastStep.title === localizedInitial &&
+                            (newTitle === 'thinking' || newTitle === 'Analizuję zapytanie...')) {
+                            return currentSteps;
+                        }
+
+                        lastStep.duration_ms = now - stepStartTime;
+                        lastStep.status = 'completed';
+                    }
+
+                    stepStartTime = now;
+                    currentSteps.push({
+                        type: 'step',
+                        title: newTitle,
+                        detail: '',
+                        duration_ms: 0,
+                        agent: null,
+                        status: 'active'
+                    });
+                    return [...currentSteps];
+                };
 
                 await streamChatResponse({
                     message: messageText,
@@ -248,26 +303,50 @@ export function ChatScreen({ route, navigation }: Props) {
                     useAgents: true,
                     abortController: abortControllerRef.current,
                     onStart: () => {
-                        setThinkingStep(language === 'pl' ? 'Analizuję zapytanie...' : 'Analyzing query...');
-                    },
-                    onStep: (step) => {
-                        setThinkingStep(step);
+                        processStartTime = Date.now();
+                        stepStartTime = Date.now();
+                        steps = [{
+                            type: 'initial',
+                            title: language === 'pl' ? 'Analizuję zapytanie...' : 'Analyzing query...',
+                            detail: '',
+                            duration_ms: 0,
+                            agent: null,
+                            status: 'active'
+                        }];
                         setMessages(prev => {
                             const updated = [...prev];
                             const lastIdx = updated.length - 1;
                             if (updated[lastIdx]?.isLoading) {
-                                updated[lastIdx] = { ...updated[lastIdx], thinkingStep: step };
+                                updated[lastIdx] = {
+                                    ...updated[lastIdx],
+                                    thinking_steps: {
+                                        type: 'thinking_steps',
+                                        steps: [...steps],
+                                        total_duration_ms: 0
+                                    }
+                                };
                             }
                             return updated;
                         });
                     },
-                    onStatus: (status) => {
-                        setThinkingStep(status);
+                    onStep: (step) => {
+                        setThinkingStep(step);
+                        steps = updateSteps(steps, step);
+                        const totalDur = Date.now() - processStartTime;
+
                         setMessages(prev => {
                             const updated = [...prev];
                             const lastIdx = updated.length - 1;
                             if (updated[lastIdx]?.isLoading) {
-                                updated[lastIdx] = { ...updated[lastIdx], thinkingStep: status };
+                                updated[lastIdx] = {
+                                    ...updated[lastIdx],
+                                    thinkingStep: step,
+                                    thinking_steps: {
+                                        type: 'thinking_steps',
+                                        steps: [...steps],
+                                        total_duration_ms: totalDur
+                                    }
+                                };
                             }
                             return updated;
                         });
@@ -277,13 +356,45 @@ export function ChatScreen({ route, navigation }: Props) {
                         setMessages(prev => {
                             const updated = [...prev];
                             const lastIdx = updated.length - 1;
+                            if (updated[lastIdx]) {
+                                updated[lastIdx] = {
+                                    ...updated[lastIdx],
+                                    text: streamedText,
+                                };
+                            }
+                            return updated;
+                        });
+                    },
+                    onStatus: (status) => {
+                        setThinkingStep(status);
+                        steps = updateSteps(steps, status);
+                        const totalDur = Date.now() - processStartTime;
+
+                        setMessages(prev => {
+                            const updated = [...prev];
+                            const lastIdx = updated.length - 1;
                             if (updated[lastIdx]?.isLoading) {
-                                updated[lastIdx] = { ...updated[lastIdx], text: streamedText };
+                                updated[lastIdx] = {
+                                    ...updated[lastIdx],
+                                    thinkingStep: status,
+                                    thinking_steps: {
+                                        type: 'thinking_steps',
+                                        steps: [...steps],
+                                        total_duration_ms: totalDur
+                                    }
+                                };
                             }
                             return updated;
                         });
                     },
                     onDone: (fullResponse, sessionId) => {
+                        const now = Date.now();
+                        if (steps.length > 0) {
+                            steps[steps.length - 1].duration_ms = now - stepStartTime;
+                            steps[steps.length - 1].status = 'completed';
+                        }
+                        const totalDuration = now - processStartTime;
+
                         if (sessionId) {
                             setCurrentSessionId(sessionId);
                         }
@@ -292,9 +403,15 @@ export function ChatScreen({ route, navigation }: Props) {
                             {
                                 sender: 'bot',
                                 text: fullResponse,
+                                thinking_steps: {
+                                    type: 'thinking_steps',
+                                    steps: steps,
+                                    total_duration_ms: totalDuration
+                                }
                             }
                         ]);
                         setThinkingStep('');
+                        setIsLoading(false);
                     },
                     onError: (error) => {
                         console.error('Streaming onError called:', error);
@@ -307,11 +424,11 @@ export function ChatScreen({ route, navigation }: Props) {
                         try {
                             const downloadUrl = `${API_BASE_URL}/download/form/${encodeURIComponent(filename)}`;
                             const token = await AsyncStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
-                            const localUri = `${FileSystem.cacheDirectory}${filename}`;
+                            const localUri = `${cacheDirectory}${filename}`;
 
                             console.log('Downloading file:', downloadUrl, 'to:', localUri);
 
-                            const downloadResult = await FileSystem.downloadAsync(
+                            const downloadResult = await downloadAsync(
                                 downloadUrl,
                                 localUri,
                                 {

@@ -32,22 +32,7 @@ export class SpeechService {
         return data.text || '';
     }
 
-    static async synthesize(text: string, voice: string = 'alloy'): Promise<string> {
-        const response = await fetch(`${API_BASE_URL}/api/speech/synthesize`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ text, voice }),
-        });
 
-        if (!response.ok) {
-            throw new Error('Failed to synthesize speech');
-        }
-
-        const blob = await response.blob();
-        return URL.createObjectURL(blob);
-    }
 }
 
 export const speechService = new SpeechService();
