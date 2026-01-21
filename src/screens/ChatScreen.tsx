@@ -2,7 +2,6 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
     View,
     Text,
-    FlatList,
     TextInput,
     TouchableOpacity,
     KeyboardAvoidingView,
@@ -16,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
-import { downloadAsync, cacheDirectory } from 'expo-file-system';
+import { cacheDirectory, downloadAsync } from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
@@ -727,18 +726,18 @@ export function ChatScreen({ route, navigation }: Props) {
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
             >
 
-                <FlatList
-                    data={messages}
-                    renderItem={renderMessage}
-                    keyExtractor={(_, index) => index.toString()}
+                <ScrollView
                     style={{ flex: 1 }}
-                    contentContainerStyle={[styles.messagesList, { paddingBottom: 100 + keyboardHeight, flexGrow: 1 }]}
-                    inverted={false}
+                    contentContainerStyle={[styles.messagesList, { paddingBottom: 250 + keyboardHeight }]}
                     keyboardShouldPersistTaps="handled"
-                    removeClippedSubviews={false}
-                    scrollEnabled={true}
-                    nestedScrollEnabled={true}
-                />
+                    showsVerticalScrollIndicator={true}
+                >
+                    {messages.map((item, index) => (
+                        <View key={index}>
+                            {renderMessage({ item, index })}
+                        </View>
+                    ))}
+                </ScrollView>
 
 
                 <ChatInput

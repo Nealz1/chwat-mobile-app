@@ -4,11 +4,88 @@ import {
     Text,
     TouchableOpacity,
     StyleSheet,
+    Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { Message, User } from '../types';
 import { ThinkingSteps } from './ThinkingSteps';
 import { Suggestions } from './Suggestions';
+
+// Simple markdown renderer that works with React Native Text
+function renderMarkdownText(text: string, textColor: string, primaryColor: string): React.ReactNode[] {
+    const lines = text.split('\n');
+    const elements: React.ReactNode[] = [];
+
+    lines.forEach((line, lineIndex) => {
+        if (lineIndex > 0) {
+            elements.push(<Text key={`br-${lineIndex}`}>{'\n'}</Text>);
+        }
+
+        // Process inline markdown
+        const parts = parseInlineMarkdown(line, textColor, primaryColor, lineIndex);
+        elements.push(...parts);
+    });
+
+    return elements;
+}
+
+function parseInlineMarkdown(text: string, textColor: string, primaryColor: string, lineKey: number): React.ReactNode[] {
+    const elements: React.ReactNode[] = [];
+    // Combined regex for links and bold - process in order of appearance
+    // Match [text](url) links and **bold** patterns
+    const combinedRegex = /\[([^\]]+)\]\(([^)]+)\)|\*\*(.+?)\*\*/g;
+    let lastIndex = 0;
+    let match;
+    let partIndex = 0;
+
+    while ((match = combinedRegex.exec(text)) !== null) {
+        if (match.index > lastIndex) {
+            elements.push(
+                <Text key={`${lineKey}-text-${partIndex++}`}>
+                    {text.slice(lastIndex, match.index)}
+                </Text>
+            );
+        }
+
+        if (match[1] && match[2]) {
+            // It's a link [text](url)
+            const linkText = match[1];
+            const url = match[2];
+            elements.push(
+                <Text
+                    key={`${lineKey}-link-${partIndex++}`}
+                    style={{ color: primaryColor, textDecorationLine: 'underline' }}
+                    onPress={() => Linking.openURL(url)}
+                >
+                    {linkText}
+                </Text>
+            );
+        } else if (match[3]) {
+            // It's bold **text**
+            elements.push(
+                <Text key={`${lineKey}-bold-${partIndex++}`} style={{ fontWeight: 'bold' }}>
+                    {match[3]}
+                </Text>
+            );
+        }
+
+        lastIndex = match.index + match[0].length;
+    }
+
+    if (lastIndex < text.length) {
+        elements.push(
+            <Text key={`${lineKey}-text-${partIndex++}`}>
+                {text.slice(lastIndex)}
+            </Text>
+        );
+    }
+
+    if (elements.length === 0) {
+        elements.push(<Text key={`${lineKey}-text-0`}>{text}</Text>);
+    }
+
+    return elements;
+}
 
 interface MessageItemProps {
     item: Message;
@@ -80,16 +157,15 @@ export function MessageItem({
 
 
 
-            {/* Content Section - Strict Vertical Stacking */}
+            {/* Content Section - With Markdown */}
             {item.text ? (
-                <View style={{ marginBottom: 4, width: '100%', flexShrink: 1 }}>
-                    <Text
-                        style={{ color: colors.text, fontSize: 16, lineHeight: 24 }}
-                        selectable={true}
-                    >
-                        {item.text}
-                    </Text>
-                </View>
+                <Text style={{
+                    color: colors.text,
+                    fontSize: 16,
+                    lineHeight: 24,
+                }}>
+                    {renderMarkdownText(item.text, colors.text, colors.primary)}
+                </Text>
             ) : null}
 
             {item.sender === 'bot' && item.suggestions && onSuggestionPress && (
