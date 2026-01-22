@@ -18,7 +18,7 @@ export interface ThemeColors {
 }
 
 const lightColors: ThemeColors = {
-    primary: '#e67e22', // Orange accent like web
+    primary: '#e67e22',
     background: '#ffffff',
     surface: '#f5f5f5',
     surfaceAlt: '#e8e8e8',
@@ -32,7 +32,7 @@ const lightColors: ThemeColors = {
 };
 
 const darkColors: ThemeColors = {
-    primary: '#e67e22', // Orange accent like web
+    primary: '#e67e22',
     background: '#1a1a1a',
     surface: '#252525',
     surfaceAlt: '#2d2d2d',
@@ -47,7 +47,7 @@ const darkColors: ThemeColors = {
 
 export function useTheme() {
     const systemColorScheme = useColorScheme();
-    const [isDark, setIsDark] = useState(true); // Default to dark like web
+    const [isDark, setIsDark] = useState(true);
 
     useEffect(() => {
         loadTheme();

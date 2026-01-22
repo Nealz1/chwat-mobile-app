@@ -1,4 +1,64 @@
-export const translations = {
+interface Translations {
+    sidebar: {
+        newChat: string;
+        searchChats: string;
+        today: string;
+        archive: string;
+        archives: string;
+        rename: string;
+        delete: string;
+        pin: string;
+        unpin: string;
+        settings: string;
+        login: string;
+        logout: string;
+        cancel: string;
+    };
+    chat: {
+        welcomeMessage: string;
+        placeholder: string;
+        serverError: string;
+        newChat: string;
+        copied: string;
+        regenerate: string;
+    };
+    settings: {
+        title: string;
+        account: string;
+        theme: string;
+        darkMode: string;
+        language: string;
+        version: string;
+        appName: string;
+        logout: string;
+        login: string;
+        notLoggedIn: string;
+    };
+    sessions: {
+        title: string;
+        noSessions: string;
+        today: string;
+        yesterday: string;
+        daysAgo: string;
+        pinned: string;
+        archived: string;
+        active: string;
+        search: string;
+        deleteConfirm: string;
+        archiveConfirm: string;
+    };
+    common: {
+        cancel: string;
+        confirm: string;
+        delete: string;
+        archive: string;
+        unarchive: string;
+        pin: string;
+        unpin: string;
+    };
+}
+
+export const translations: Record<'en' | 'pl', Translations> = {
     en: {
         sidebar: {
             newChat: "New chat",
@@ -137,7 +197,7 @@ export const translations = {
             unpin: "Odepnij",
         },
     },
-} as const;
+};
 
-export type Language = keyof typeof translations;
-export type TranslationsType = typeof translations.en;
+export type Language = 'en' | 'pl';
+export type TranslationsType = Translations;

@@ -123,7 +123,7 @@ export const useMessageTree = (sessionId: number | null) => {
             } else if (direction === 'next' && currentIdx < siblings.length - 1) {
                 newIdx = currentIdx + 1;
             } else {
-                return null; // Can't navigate further
+                return null;
             }
 
             const newSibling = siblings[newIdx];

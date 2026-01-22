@@ -12,12 +12,10 @@ import type { Message, User } from '../types';
 import { ThinkingSteps } from './ThinkingSteps';
 import { Suggestions } from './Suggestions';
 
-// Check if URL should open in-app browser
 function isInAppUrl(url: string): boolean {
     return url.includes('usos.wat.edu.pl') || url.includes('usosapps.wat.edu.pl');
 }
 
-// Open URL - in-app for USOS, external for others
 async function openUrl(url: string): Promise<void> {
     if (isInAppUrl(url)) {
         await WebBrowser.openBrowserAsync(url, {
@@ -30,7 +28,6 @@ async function openUrl(url: string): Promise<void> {
     }
 }
 
-// Simple markdown renderer that works with React Native Text
 function renderMarkdownText(text: string, textColor: string, primaryColor: string): React.ReactNode[] {
     const lines = text.split('\n');
     const elements: React.ReactNode[] = [];
@@ -40,7 +37,6 @@ function renderMarkdownText(text: string, textColor: string, primaryColor: strin
             elements.push(<Text key={`br-${lineIndex}`}>{'\n'}</Text>);
         }
 
-        // Process inline markdown
         const parts = parseInlineMarkdown(line, textColor, primaryColor, lineIndex);
         elements.push(...parts);
     });
@@ -50,8 +46,6 @@ function renderMarkdownText(text: string, textColor: string, primaryColor: strin
 
 function parseInlineMarkdown(text: string, textColor: string, primaryColor: string, lineKey: number): React.ReactNode[] {
     const elements: React.ReactNode[] = [];
-    // Combined regex for links and bold - process in order of appearance
-    // Match [text](url) links and **bold** patterns
     const combinedRegex = /\[([^\]]+)\]\(([^)]+)\)|\*\*(.+?)\*\*/g;
     let lastIndex = 0;
     let match;
@@ -67,7 +61,6 @@ function parseInlineMarkdown(text: string, textColor: string, primaryColor: stri
         }
 
         if (match[1] && match[2]) {
-            // It's a link [text](url)
             const linkText = match[1];
             const url = match[2];
             elements.push(
@@ -80,7 +73,6 @@ function parseInlineMarkdown(text: string, textColor: string, primaryColor: stri
                 </Text>
             );
         } else if (match[3]) {
-            // It's bold **text**
             elements.push(
                 <Text key={`${lineKey}-bold-${partIndex++}`} style={{ fontWeight: 'bold' }}>
                     {match[3]}

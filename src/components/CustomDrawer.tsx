@@ -9,7 +9,6 @@ import {
     TextInput,
     RefreshControl,
 } from 'react-native';
-import { DrawerContentComponentProps } from '@react-navigation/drawer';
 import { chatService } from '../services/chatService';
 import { authService } from '../services/authService';
 import type { ChatSession, User } from '../types';
@@ -18,7 +17,11 @@ import { useLanguage } from '../contexts/LanguageContext';
 
 const watLogo = require('../../assets/wat_logo_light.png');
 
-export function CustomDrawer({ navigation }: DrawerContentComponentProps) {
+interface CustomDrawerProps {
+    navigation: any;
+}
+
+export function CustomDrawer({ navigation }: CustomDrawerProps) {
     const { colors } = useTheme();
     const { language, t } = useLanguage();
     const [user, setUser] = useState<User | null>(null);

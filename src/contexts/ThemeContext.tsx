@@ -17,7 +17,7 @@ export interface ThemeColors {
 }
 
 const lightColors: ThemeColors = {
-    primary: '#e67e22', // Orange accent like web
+    primary: '#e67e22',
     background: '#ffffff',
     surface: '#f5f5f5',
     surfaceAlt: '#e8e8e8',
@@ -31,8 +31,8 @@ const lightColors: ThemeColors = {
 };
 
 const darkColors: ThemeColors = {
-    primary: '#e67e22', // Orange accent like web
-    background: '#242424', // --bg-primary from web
+    primary: '#e67e22',
+    background: '#242424',
     surface: '#2d2d2d',
     surfaceAlt: '#353535',
     sidebar: '#242424',
@@ -53,7 +53,7 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-    const [isDark, setIsDark] = useState(true); // Default to dark like web
+    const [isDark, setIsDark] = useState(true);
 
     useEffect(() => {
         loadTheme();
