@@ -849,27 +849,31 @@ export function ChatScreen({ route, navigation }: Props) {
                             return newMessages;
                         });
                     },
-                    onDone: (fullResponse, sessionId, nodeId, siblingCount, currentIndex) => {
+                    onDone: async (fullResponse, sessionId, nodeId, siblingCount, currentIndex) => {
                         const totalDuration = Date.now() - processStartTime;
                         if (steps.length > 0) {
                             steps[steps.length - 1].duration_ms = Date.now() - stepStartTime;
                             steps[steps.length - 1].status = 'completed';
                         }
-                        if (sessionId) setCurrentSessionId(sessionId);
-                        setMessages(prev => {
-                            const newMessages = [...prev];
-                            if (botMessageIndex < newMessages.length) {
-                                newMessages[botMessageIndex] = {
-                                    sender: 'bot',
-                                    text: fullResponse,
-                                    nodeId,
-                                    siblingCount,
-                                    currentIndex,
-                                    thinking_steps: { type: 'thinking_steps', steps, total_duration_ms: totalDuration }
-                                };
-                            }
-                            return newMessages;
-                        });
+                        if (sessionId) {
+                            setCurrentSessionId(sessionId);
+                            await loadSessionMessages(sessionId);
+                        } else {
+                            setMessages(prev => {
+                                const newMessages = [...prev];
+                                if (botMessageIndex < newMessages.length) {
+                                    newMessages[botMessageIndex] = {
+                                        sender: 'bot',
+                                        text: fullResponse,
+                                        nodeId,
+                                        siblingCount,
+                                        currentIndex,
+                                        thinking_steps: { type: 'thinking_steps', steps, total_duration_ms: totalDuration }
+                                    };
+                                }
+                                return newMessages;
+                            });
+                        }
                     },
                     onError: (error) => {
                         console.error('Edit streaming error:', error);
