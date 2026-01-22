@@ -105,7 +105,10 @@ export function ChatScreen({ route, navigation }: Props) {
     useFocusEffect(
         useCallback(() => {
             loadUser();
-        }, [])
+            if (currentSessionId) {
+                loadSessionMessages(currentSessionId);
+            }
+        }, [currentSessionId])
     );
 
     const loadDraft = async () => {
@@ -264,16 +267,13 @@ export function ChatScreen({ route, navigation }: Props) {
 
                 const updateSteps = (currentSteps: ThinkingStep[], newTitle: string) => {
                     const now = Date.now();
-                    // Close the previous step
                     if (currentSteps.length > 0) {
                         const lastStep = currentSteps[currentSteps.length - 1];
 
-                        // Prevent exact duplicates
                         if (lastStep.title.trim().toLowerCase() === newTitle.trim().toLowerCase()) {
                             return currentSteps;
                         }
 
-                        // Also prevent duplicating the localized initial step
                         const localizedInitial = language === 'pl' ? 'Analizuję zapytanie...' : 'Analyzing query...';
                         if (lastStep.title === localizedInitial &&
                             (newTitle === 'thinking' || newTitle === 'Analizuję zapytanie...')) {
@@ -386,7 +386,7 @@ export function ChatScreen({ route, navigation }: Props) {
                             return updated;
                         });
                     },
-                    onDone: (fullResponse, sessionId) => {
+                    onDone: (fullResponse, sessionId, nodeId, siblingCount, currentIndex) => {
                         console.log(`[onDone] fullResponse length: ${fullResponse?.length || 0}`);
                         console.log(`[onDone] fullResponse preview: ${fullResponse?.substring(0, 200)}...`);
                         console.log(`[onDone] fullResponse end: ...${fullResponse?.substring(fullResponse.length - 200)}`);
@@ -406,6 +406,9 @@ export function ChatScreen({ route, navigation }: Props) {
                             {
                                 sender: 'bot',
                                 text: fullResponse,
+                                nodeId: nodeId,
+                                siblingCount: siblingCount,
+                                currentIndex: currentIndex,
                                 thinking_steps: {
                                     type: 'thinking_steps',
                                     steps: steps,
@@ -509,30 +512,184 @@ export function ChatScreen({ route, navigation }: Props) {
         const userMessage = messages[messageIndex - 1];
         if (userMessage?.sender !== 'user') return;
 
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         setIsLoading(true);
+        setThinkingStep('');
+
+        const processStartTime = Date.now();
+        let steps: ThinkingStep[] = [{
+            type: 'initial',
+            title: language === 'pl' ? 'Analizuję zapytanie...' : 'Analyzing query...',
+            detail: '',
+            duration_ms: 0,
+            agent: null,
+            status: 'active'
+        }];
+
         setMessages(prev => {
             const newMessages = [...prev];
-            newMessages[messageIndex] = { sender: 'bot', text: '', isLoading: true };
+            newMessages[messageIndex] = {
+                sender: 'bot',
+                text: '',
+                isLoading: true,
+                thinkingStep: steps[0].title,
+                thinking_steps: { type: 'thinking_steps', steps: [...steps], total_duration_ms: 0 }
+            };
             return newMessages;
         });
 
         try {
-            let response: SendMessageResponse | { response: string };
-            if (user) {
-                response = await chatService.sendMessage(userMessage.text, currentSessionId);
-            } else {
-                response = await chatService.sendGuestMessage(userMessage.text);
-            }
+            if (userMessage.nodeId && currentSessionId) {
+                steps[0].status = 'completed';
+                steps[0].duration_ms = Date.now() - processStartTime;
+                steps.push({
+                    type: 'step',
+                    title: language === 'pl' ? 'Generuję nową odpowiedź...' : 'Generating new response...',
+                    detail: '',
+                    duration_ms: 0,
+                    agent: null,
+                    status: 'active'
+                });
+                setMessages(prev => {
+                    const newMessages = [...prev];
+                    if (newMessages[messageIndex]?.isLoading) {
+                        newMessages[messageIndex] = {
+                            ...newMessages[messageIndex],
+                            thinkingStep: steps[steps.length - 1].title,
+                            thinking_steps: { type: 'thinking_steps', steps: [...steps], total_duration_ms: Date.now() - processStartTime }
+                        };
+                    }
+                    return newMessages;
+                });
 
-            setMessages(prev => {
-                const newMessages = [...prev];
-                newMessages[messageIndex] = {
-                    sender: 'bot',
-                    text: response.response,
-                    nodeId: 'node_id' in response ? response.node_id : undefined,
+                const result = await chatService.regenerateResponse(currentSessionId, userMessage.nodeId);
+
+                if (result) {
+                    const totalDuration = Date.now() - processStartTime;
+                    steps[steps.length - 1].status = 'completed';
+                    steps[steps.length - 1].duration_ms = totalDuration - steps[0].duration_ms;
+
+                    setMessages(prev => {
+                        const newMessages = [...prev];
+                        newMessages[messageIndex] = {
+                            sender: 'bot',
+                            text: result.content,
+                            nodeId: result.node_id,
+                            siblingCount: result.sibling_count,
+                            currentIndex: result.current_index,
+                            thinking_steps: { type: 'thinking_steps', steps, total_duration_ms: totalDuration }
+                        };
+                        return newMessages;
+                    });
+
+                    if (result.file_download?.filename) {
+                        try {
+                            const downloadUrl = `${API_BASE_URL}/download/form/${encodeURIComponent(result.file_download.filename)}`;
+                            const token = await AsyncStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+                            const localUri = `${cacheDirectory}${result.file_download.filename}`;
+                            await downloadAsync(downloadUrl, localUri, {
+                                headers: token ? { Authorization: `Bearer ${token}` } : {}
+                            });
+                            await Sharing.shareAsync(localUri);
+                        } catch (err) {
+                            console.error('Error downloading file:', err);
+                        }
+                    }
+                } else {
+                    setMessages(prev => {
+                        const newMessages = [...prev];
+                        newMessages[messageIndex] = { sender: 'bot', text: t.chat.serverError };
+                        return newMessages;
+                    });
+                    return;
+                }
+            } else {
+                abortControllerRef.current = new AbortController();
+                let streamedText = '';
+                let stepStartTime = Date.now();
+
+                const updateSteps = (currentSteps: ThinkingStep[], newTitle: string) => {
+                    const now = Date.now();
+                    if (currentSteps.length > 0) {
+                        const lastStep = currentSteps[currentSteps.length - 1];
+                        if (lastStep.title.trim().toLowerCase() === newTitle.trim().toLowerCase()) {
+                            return currentSteps;
+                        }
+                        lastStep.duration_ms = now - stepStartTime;
+                        lastStep.status = 'completed';
+                    }
+                    stepStartTime = now;
+                    currentSteps.push({
+                        type: 'step',
+                        title: newTitle,
+                        detail: '',
+                        duration_ms: 0,
+                        agent: null,
+                        status: 'active'
+                    });
+                    return [...currentSteps];
                 };
-                return newMessages;
-            });
+
+                await streamChatResponse({
+                    message: userMessage.text,
+                    sessionId: currentSessionId,
+                    useAgents: true,
+                    abortController: abortControllerRef.current,
+                    onStep: (step) => {
+                        setThinkingStep(step);
+                        steps = updateSteps(steps, step);
+                        setMessages(prev => {
+                            const newMessages = [...prev];
+                            if (newMessages[messageIndex]?.isLoading) {
+                                newMessages[messageIndex] = {
+                                    ...newMessages[messageIndex],
+                                    thinkingStep: step,
+                                    thinking_steps: { type: 'thinking_steps', steps: [...steps], total_duration_ms: Date.now() - processStartTime }
+                                };
+                            }
+                            return newMessages;
+                        });
+                    },
+                    onToken: (token) => {
+                        streamedText += token;
+                        setMessages(prev => {
+                            const newMessages = [...prev];
+                            if (newMessages[messageIndex]) {
+                                newMessages[messageIndex] = { ...newMessages[messageIndex], text: streamedText };
+                            }
+                            return newMessages;
+                        });
+                    },
+                    onDone: (fullResponse, sessionId, nodeId, siblingCount, currentIndex) => {
+                        const totalDuration = Date.now() - processStartTime;
+                        if (steps.length > 0) {
+                            steps[steps.length - 1].duration_ms = Date.now() - stepStartTime;
+                            steps[steps.length - 1].status = 'completed';
+                        }
+                        if (sessionId) setCurrentSessionId(sessionId);
+                        setMessages(prev => {
+                            const newMessages = [...prev];
+                            newMessages[messageIndex] = {
+                                sender: 'bot',
+                                text: fullResponse,
+                                nodeId,
+                                siblingCount,
+                                currentIndex,
+                                thinking_steps: { type: 'thinking_steps', steps, total_duration_ms: totalDuration }
+                            };
+                            return newMessages;
+                        });
+                    },
+                    onError: (error) => {
+                        console.error('Regenerate streaming error:', error);
+                        setMessages(prev => {
+                            const newMessages = [...prev];
+                            newMessages[messageIndex] = { sender: 'bot', text: t.chat.serverError };
+                            return newMessages;
+                        });
+                    },
+                });
+            }
         } catch (error) {
             console.error('Error regenerating:', error);
             setMessages(prev => {
@@ -542,8 +699,10 @@ export function ChatScreen({ route, navigation }: Props) {
             });
         } finally {
             setIsLoading(false);
+            setThinkingStep('');
+            abortControllerRef.current = null;
         }
-    }, [isLoading, messages, user, currentSessionId, t]);
+    }, [isLoading, messages, currentSessionId, t, language]);
 
     const handleStartEdit = useCallback((index: number, text: string) => {
         setEditingIndex(index);
@@ -558,51 +717,187 @@ export function ChatScreen({ route, navigation }: Props) {
     const handleSaveEdit = useCallback(async () => {
         if (editingIndex === null || !editText.trim() || isLoading) return;
 
+        const originalUserMessage = messages[editingIndex];
         const editedUserMessage = editText.trim();
+        const botMessageIndex = editingIndex + 1;
         handleCancelEdit();
+
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         setIsLoading(true);
+        setThinkingStep('');
+
+        const processStartTime = Date.now();
+        let steps: ThinkingStep[] = [{
+            type: 'initial',
+            title: language === 'pl' ? 'Analizuję zapytanie...' : 'Analyzing query...',
+            detail: '',
+            duration_ms: 0,
+            agent: null,
+            status: 'active'
+        }];
 
         setMessages(prev => {
             const newMessages = [...prev];
             newMessages[editingIndex] = { sender: 'user', text: editedUserMessage };
-            if (editingIndex + 1 < newMessages.length) {
-                newMessages[editingIndex + 1] = { sender: 'bot', text: '', isLoading: true };
+            if (botMessageIndex < newMessages.length) {
+                newMessages[botMessageIndex] = {
+                    sender: 'bot',
+                    text: '',
+                    isLoading: true,
+                    thinkingStep: steps[0].title,
+                    thinking_steps: { type: 'thinking_steps', steps: [...steps], total_duration_ms: 0 }
+                };
             }
             return newMessages;
         });
 
         try {
-            let response: SendMessageResponse | { response: string };
-            if (user) {
-                response = await chatService.sendMessage(editedUserMessage, currentSessionId);
-            } else {
-                response = await chatService.sendGuestMessage(editedUserMessage);
-            }
+            if (originalUserMessage?.nodeId && currentSessionId) {
+                steps[0].status = 'completed';
+                steps[0].duration_ms = Date.now() - processStartTime;
+                steps.push({
+                    type: 'step',
+                    title: language === 'pl' ? 'Przetwarzam edycję...' : 'Processing edit...',
+                    detail: '',
+                    duration_ms: 0,
+                    agent: null,
+                    status: 'active'
+                });
+                setMessages(prev => {
+                    const newMessages = [...prev];
+                    if (newMessages[botMessageIndex]?.isLoading) {
+                        newMessages[botMessageIndex] = {
+                            ...newMessages[botMessageIndex],
+                            thinkingStep: steps[steps.length - 1].title,
+                            thinking_steps: { type: 'thinking_steps', steps: [...steps], total_duration_ms: Date.now() - processStartTime }
+                        };
+                    }
+                    return newMessages;
+                });
 
-            setMessages(prev => {
-                const newMessages = [...prev];
-                if (editingIndex + 1 < newMessages.length) {
-                    newMessages[editingIndex + 1] = {
-                        sender: 'bot',
-                        text: response.response,
-                        nodeId: 'node_id' in response ? response.node_id : undefined,
-                    };
+                const result = await chatService.editMessage(currentSessionId, originalUserMessage.nodeId, editedUserMessage);
+
+                if (result) {
+                    const totalDuration = Date.now() - processStartTime;
+                    steps[steps.length - 1].status = 'completed';
+                    steps[steps.length - 1].duration_ms = totalDuration - steps[0].duration_ms;
+
+                    await loadSessionMessages(currentSessionId);
+                } else {
+                    setMessages(prev => {
+                        const newMessages = [...prev];
+                        if (botMessageIndex < newMessages.length) {
+                            newMessages[botMessageIndex] = { sender: 'bot', text: t.chat.serverError };
+                        }
+                        return newMessages;
+                    });
                 }
-                return newMessages;
-            });
+            } else {
+                abortControllerRef.current = new AbortController();
+                let streamedText = '';
+                let stepStartTime = Date.now();
+
+                const updateSteps = (currentSteps: ThinkingStep[], newTitle: string) => {
+                    const now = Date.now();
+                    if (currentSteps.length > 0) {
+                        const lastStep = currentSteps[currentSteps.length - 1];
+                        if (lastStep.title.trim().toLowerCase() === newTitle.trim().toLowerCase()) {
+                            return currentSteps;
+                        }
+                        lastStep.duration_ms = now - stepStartTime;
+                        lastStep.status = 'completed';
+                    }
+                    stepStartTime = now;
+                    currentSteps.push({
+                        type: 'step',
+                        title: newTitle,
+                        detail: '',
+                        duration_ms: 0,
+                        agent: null,
+                        status: 'active'
+                    });
+                    return [...currentSteps];
+                };
+
+                await streamChatResponse({
+                    message: editedUserMessage,
+                    sessionId: currentSessionId,
+                    useAgents: true,
+                    abortController: abortControllerRef.current,
+                    onStep: (step) => {
+                        setThinkingStep(step);
+                        steps = updateSteps(steps, step);
+                        setMessages(prev => {
+                            const newMessages = [...prev];
+                            if (newMessages[botMessageIndex]?.isLoading) {
+                                newMessages[botMessageIndex] = {
+                                    ...newMessages[botMessageIndex],
+                                    thinkingStep: step,
+                                    thinking_steps: { type: 'thinking_steps', steps: [...steps], total_duration_ms: Date.now() - processStartTime }
+                                };
+                            }
+                            return newMessages;
+                        });
+                    },
+                    onToken: (token) => {
+                        streamedText += token;
+                        setMessages(prev => {
+                            const newMessages = [...prev];
+                            if (newMessages[botMessageIndex]) {
+                                newMessages[botMessageIndex] = { ...newMessages[botMessageIndex], text: streamedText };
+                            }
+                            return newMessages;
+                        });
+                    },
+                    onDone: (fullResponse, sessionId, nodeId, siblingCount, currentIndex) => {
+                        const totalDuration = Date.now() - processStartTime;
+                        if (steps.length > 0) {
+                            steps[steps.length - 1].duration_ms = Date.now() - stepStartTime;
+                            steps[steps.length - 1].status = 'completed';
+                        }
+                        if (sessionId) setCurrentSessionId(sessionId);
+                        setMessages(prev => {
+                            const newMessages = [...prev];
+                            if (botMessageIndex < newMessages.length) {
+                                newMessages[botMessageIndex] = {
+                                    sender: 'bot',
+                                    text: fullResponse,
+                                    nodeId,
+                                    siblingCount,
+                                    currentIndex,
+                                    thinking_steps: { type: 'thinking_steps', steps, total_duration_ms: totalDuration }
+                                };
+                            }
+                            return newMessages;
+                        });
+                    },
+                    onError: (error) => {
+                        console.error('Edit streaming error:', error);
+                        setMessages(prev => {
+                            const newMessages = [...prev];
+                            if (botMessageIndex < newMessages.length) {
+                                newMessages[botMessageIndex] = { sender: 'bot', text: t.chat.serverError };
+                            }
+                            return newMessages;
+                        });
+                    },
+                });
+            }
         } catch (error) {
             console.error('Error after edit:', error);
             setMessages(prev => {
                 const newMessages = [...prev];
-                if (editingIndex + 1 < newMessages.length) {
-                    newMessages[editingIndex + 1] = { sender: 'bot', text: t.chat.serverError };
+                if (botMessageIndex < newMessages.length) {
+                    newMessages[botMessageIndex] = { sender: 'bot', text: t.chat.serverError };
                 }
                 return newMessages;
             });
         } finally {
             setIsLoading(false);
+            setThinkingStep('');
+            abortControllerRef.current = null;
         }
-    }, [editingIndex, editText, isLoading, user, currentSessionId, t, handleCancelEdit]);
+    }, [editingIndex, editText, isLoading, messages, currentSessionId, handleCancelEdit, t, language]);
 
     const handleFeedback = useCallback(async (nodeId: number, feedbackType: string) => {
         if (!user) return;
@@ -655,11 +950,11 @@ export function ChatScreen({ route, navigation }: Props) {
 
     const handleSpeak = useCallback((text: string) => {
         const cleanText = text
-            .replace(/\*\*(.*?)\*\*/g, '$1')  // Bold
-            .replace(/\*(.*?)\*/g, '$1')      // Italic
-            .replace(/`(.*?)`/g, '$1')        // Code
-            .replace(/#{1,6}\s/g, '')         // Headers
-            .replace(/\[(.*?)\]\(.*?\)/g, '$1'); // Links
+            .replace(/\*\*(.*?)\*\*/g, '$1')
+            .replace(/\*(.*?)\*/g, '$1')
+            .replace(/`(.*?)`/g, '$1')
+            .replace(/#{1,6}\s/g, '')
+            .replace(/\[(.*?)\]\(.*?\)/g, '$1');
 
         Speech.speak(cleanText, {
             language: language === 'pl' ? 'pl-PL' : 'en-US',

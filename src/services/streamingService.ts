@@ -7,6 +7,9 @@ export interface StreamEvent {
     message?: string;
     full_response?: string;
     session_id?: number;
+    node_id?: number;
+    sibling_count?: number;
+    current_index?: number;
     file_download?: {
         filename: string;
         path: string;
@@ -18,7 +21,7 @@ export interface StreamOptions {
     sessionId?: number | null;
     onStart?: () => void;
     onToken?: (token: string) => void;
-    onDone?: (fullResponse: string, sessionId?: number) => void;
+    onDone?: (fullResponse: string, sessionId?: number, nodeId?: number, siblingCount?: number, currentIndex?: number) => void;
     onError?: (error: string) => void;
     onStatus?: (status: string) => void;
     onStep?: (step: string) => void;
@@ -74,7 +77,13 @@ export async function streamChatResponse(options: StreamOptions): Promise<void> 
                     const finalResponse = serverResponse.length >= fullResponseAccumulator.length
                         ? serverResponse
                         : fullResponseAccumulator;
-                    onDone?.(finalResponse, eventData.session_id);
+                    onDone?.(
+                        finalResponse,
+                        eventData.session_id,
+                        eventData.node_id,
+                        eventData.sibling_count,
+                        eventData.current_index
+                    );
                     if (eventData.file_download && onFileDownload) {
                         onFileDownload(eventData.file_download.filename, eventData.file_download.path);
                     }
@@ -109,7 +118,6 @@ export async function streamChatResponse(options: StreamOptions): Promise<void> 
                             const eventData: StreamEvent = JSON.parse(jsonStr);
                             processEvent(eventData);
                         } catch (parseError) {
-                            // Partial JSON - will be completed in next chunk
                         }
                     }
                 }
@@ -161,6 +169,148 @@ export async function streamChatResponse(options: StreamOptions): Promise<void> 
 
 export function isStreamingSupported(): boolean {
     return typeof ReadableStream !== 'undefined' && typeof TextDecoder !== 'undefined';
+}
+
+export interface RegenerateStreamOptions {
+    sessionId: number;
+    botNodeId: number;
+    onStart?: () => void;
+    onToken?: (token: string) => void;
+    onDone?: (fullResponse: string, sessionId?: number, nodeId?: number, siblingCount?: number, currentIndex?: number) => void;
+    onError?: (error: string) => void;
+    onStep?: (step: string) => void;
+    onFileDownload?: (filename: string, path: string) => void;
+    abortController?: AbortController;
+}
+
+export async function streamRegenerateResponse(options: RegenerateStreamOptions): Promise<void> {
+    const {
+        sessionId,
+        botNodeId,
+        onStart,
+        onToken,
+        onDone,
+        onError,
+        onStep,
+        onFileDownload,
+        abortController,
+    } = options;
+
+    const token = await AsyncStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+    const url = `${API_BASE_URL}/chat/sessions/${sessionId}/regenerate-by-node/stream`;
+
+    return new Promise((resolve) => {
+        const xhr = new XMLHttpRequest();
+        let lastReadIndex = 0;
+        let buffer = '';
+        let fullResponseAccumulator = '';
+
+        xhr.open('POST', url, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        if (token) {
+            xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        }
+
+        const processEvent = (eventData: StreamEvent) => {
+            switch (eventData.type) {
+                case 'start':
+                    onStart?.();
+                    break;
+                case 'token':
+                    if (eventData.content) {
+                        fullResponseAccumulator += eventData.content;
+                        onToken?.(eventData.content);
+                    }
+                    break;
+                case 'done':
+                    const serverResponse = eventData.full_response || '';
+                    const finalResponse = serverResponse.length >= fullResponseAccumulator.length
+                        ? serverResponse
+                        : fullResponseAccumulator;
+                    onDone?.(
+                        finalResponse,
+                        eventData.session_id,
+                        eventData.node_id,
+                        eventData.sibling_count,
+                        eventData.current_index
+                    );
+                    if (eventData.file_download && onFileDownload) {
+                        onFileDownload(eventData.file_download.filename, eventData.file_download.path);
+                    }
+                    break;
+                case 'error':
+                    onError?.(eventData.message || 'Unknown error');
+                    break;
+                case 'step':
+                    onStep?.((eventData as unknown as { step: string }).step || '');
+                    break;
+            }
+        };
+
+        const processSSEData = (text: string) => {
+            buffer += text;
+            const events = buffer.split('\n\n');
+            buffer = events.pop() || '';
+
+            for (const event of events) {
+                const trimmedEvent = event.trim();
+                if (!trimmedEvent) continue;
+
+                const lines = trimmedEvent.split('\n');
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const jsonStr = line.slice(6);
+                            if (!jsonStr) continue;
+                            const eventData: StreamEvent = JSON.parse(jsonStr);
+                            processEvent(eventData);
+                        } catch (parseError) {
+                        }
+                    }
+                }
+            }
+        };
+
+        xhr.onreadystatechange = () => {
+            if (xhr.readyState === 3) {
+                const response = xhr.responseText;
+                const newContent = response.substring(lastReadIndex);
+                lastReadIndex = response.length;
+                processSSEData(newContent);
+            } else if (xhr.readyState === 4) {
+                if (buffer.trim()) {
+                    processSSEData('\n\n');
+                }
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    resolve();
+                } else {
+                    try {
+                        const errorData = JSON.parse(xhr.responseText);
+                        onError?.(errorData.detail || errorData.message || `HTTP error ${xhr.status}`);
+                    } catch {
+                        onError?.(`HTTP error ${xhr.status}`);
+                    }
+                    resolve();
+                }
+            }
+        };
+
+        xhr.onerror = () => {
+            onError?.('Network request failed');
+            resolve();
+        };
+
+        if (abortController?.signal) {
+            abortController.signal.onabort = () => {
+                xhr.abort();
+                resolve();
+            };
+        }
+
+        xhr.send(JSON.stringify({
+            bot_node_id: botNodeId,
+        }));
+    });
 }
 
 export async function sendChatMessageFallback(
