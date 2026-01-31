@@ -10,6 +10,7 @@ import {
     UIManager,
     Easing,
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -95,17 +96,17 @@ export const ThinkingSteps = memo(({ data, isLoading = false, currentStep, color
         setIsExpanded(!isExpanded);
     };
 
-    const containerBorderColor = isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(139, 92, 246, 0.3)';
-    const spinnerColor = isDark ? '#ffffff' : '#8b5cf6';
-    const textColor = colors.text;
+    const spinnerColor = isDark ? '#4285f4' : '#4285f4';
+    const iconColor = '#4285f4';
+    const textColor = colors.textSecondary;
     const secondaryTextColor = colors.textSecondary;
 
     if (isLoading && (!data?.steps || data.steps.length === 0)) {
-        const stepText = currentStep ? getLocalizedStep(currentStep) : 'Rozpoczynam myślenie...';
+        const stepText = currentStep ? getLocalizedStep(currentStep) : 'Myślę...';
         return (
             <View style={styles.container}>
                 <TouchableOpacity
-                    style={[styles.header, { borderColor: containerBorderColor }]}
+                    style={styles.header}
                     onPress={toggleExpanded}
                     activeOpacity={0.7}
                 >
@@ -113,7 +114,7 @@ export const ThinkingSteps = memo(({ data, isLoading = false, currentStep, color
                         styles.spinner,
                         {
                             transform: [{ rotate: spin }],
-                            borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(139, 92, 246, 0.3)',
+                            borderColor: 'rgba(66, 133, 244, 0.3)',
                             borderTopColor: spinnerColor
                         }
                     ]} />
@@ -132,12 +133,12 @@ export const ThinkingSteps = memo(({ data, isLoading = false, currentStep, color
         ? (data.total_duration_ms / 1000).toFixed(1) + 's'
         : isLoading ? '...' : '';
 
-    const headerText = isLoading ? 'Przetwarzam...' : `Myślałem przez ${totalDuration}`;
+    const headerText = isLoading ? 'Myślę...' : `Myślałem przez ${totalDuration}`;
 
     return (
         <View style={styles.container}>
             <TouchableOpacity
-                style={[styles.header, { borderColor: containerBorderColor }]}
+                style={styles.header}
                 onPress={toggleExpanded}
                 activeOpacity={0.7}
             >
@@ -146,21 +147,19 @@ export const ThinkingSteps = memo(({ data, isLoading = false, currentStep, color
                         styles.spinner,
                         {
                             transform: [{ rotate: spin }],
-                            borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(139, 92, 246, 0.3)',
+                            borderColor: 'rgba(66, 133, 244, 0.3)',
                             borderTopColor: spinnerColor
                         }
                     ]} />
                 ) : (
-                    <View style={styles.doneIcon}>
-                        <Text style={styles.doneCheckmark}>✓</Text>
-                    </View>
+                    <MaterialCommunityIcons name="robot" size={18} color={iconColor} />
                 )}
                 <Text style={[styles.statusText, { color: textColor }]}>{headerText}</Text>
                 <Text style={[styles.chevron, { color: secondaryTextColor }, isExpanded && styles.chevronExpanded]}>▼</Text>
             </TouchableOpacity>
 
             {isExpanded && (
-                <View style={[styles.content, { borderLeftColor: containerBorderColor }]}>
+                <View style={styles.content}>
                     {steps.map((step, index) => {
                         const isLast = index === steps.length - 1;
                         const isActive = isLast && isLoading;
@@ -170,14 +169,14 @@ export const ThinkingSteps = memo(({ data, isLoading = false, currentStep, color
                                 <View style={[
                                     styles.stepDot,
                                     isActive ? styles.stepDotActive : styles.stepDotDone,
-                                    isActive && { borderColor: isDark ? 'rgba(255,255,255,0.3)' : '#ddd6fe' }
+                                    isActive && { borderColor: 'rgba(66, 133, 244, 0.5)' }
                                 ]}>
                                     {isActive && <View style={[styles.stepDotInner, { backgroundColor: spinnerColor }]} />}
                                 </View>
                                 <Text style={[
                                     styles.stepText,
                                     { color: secondaryTextColor },
-                                    isActive && { color: textColor, fontWeight: '500' }
+                                    isActive && { color: colors.text, fontWeight: '500' }
                                 ]}>
                                     {getLocalizedStep(step.title)}
                                 </Text>
@@ -205,9 +204,8 @@ const styles = StyleSheet.create({
         alignSelf: 'flex-start',
         gap: 8,
         paddingVertical: 8,
-        paddingHorizontal: 14,
-        borderWidth: 1,
-        borderRadius: 20,
+        paddingHorizontal: 12,
+        borderRadius: 8,
         backgroundColor: 'transparent',
     },
     spinner: {
@@ -216,20 +214,8 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         borderRadius: 8,
     },
-    doneIcon: {
-        width: 16,
-        height: 16,
-        borderRadius: 8,
-        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    doneCheckmark: {
-        fontSize: 10,
-        color: '#10b981',
-    },
     statusText: {
-        fontWeight: '500',
+        fontWeight: '400',
         fontSize: 14,
     },
     chevron: {
@@ -241,10 +227,11 @@ const styles = StyleSheet.create({
         transform: [{ rotate: '180deg' }],
     },
     content: {
-        marginTop: 8,
-        paddingLeft: 16,
-        borderLeftWidth: 2,
-        marginLeft: 8,
+        marginTop: 4,
+        paddingLeft: 20,
+        borderLeftWidth: 1,
+        borderLeftColor: 'rgba(255, 255, 255, 0.1)',
+        marginLeft: 20,
     },
     stepItem: {
         flexDirection: 'row',
@@ -253,25 +240,25 @@ const styles = StyleSheet.create({
         paddingVertical: 4,
     },
     stepDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
+        width: 6,
+        height: 6,
+        borderRadius: 3,
         backgroundColor: '#d1d5db',
     },
     stepDotActive: {
         backgroundColor: 'transparent',
-        width: 10,
-        height: 10,
-        borderRadius: 5,
+        width: 8,
+        height: 8,
+        borderRadius: 4,
         borderWidth: 2,
     },
     stepDotDone: {
-        backgroundColor: '#10b981',
+        backgroundColor: '#34a853',
     },
     stepDotInner: {
         flex: 1,
         borderRadius: 2,
-        margin: 1.5,
+        margin: 1,
     },
     stepText: {
         flex: 1,
@@ -279,6 +266,6 @@ const styles = StyleSheet.create({
     },
     stepTime: {
         fontSize: 11,
-        opacity: 0.7,
+        opacity: 0.6,
     },
 });
